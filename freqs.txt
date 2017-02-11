@@ -1,0 +1,5 @@
+fuzzy 89
+test 2312
+foo 123
+bar 34
+baz 1

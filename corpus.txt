@@ -1,0 +1,801 @@
+﻿Web-Based E-Assessment Beyond Multiple-Choice: The Application of PHP- and HTML5 Technologies to Different Testing Formats
+
+Documentation
+
+Master's Thesis
+in
+
+Linguistics and Web Technology
+
+
+presented to the Faculty of
+Foreign Languages and Cultures
+at the Philipps-Universität Marburg
+
+by
+
+
+
+Julia Neumann
+from Naumburg (Germany)
+Marburg, 2015
+Contents
+	List of Abbreviations	3
+1 	Introduction	4
+2 	User Guide	5
+3 	Overall Organization of the Code	7
+3.1	General Design of the JavaScript Components	9
+4 	Implementation of the Testing Formats	11
+4.1	Crossword	11
+4.2	Dynamic Multiple-Choice	13
+4.3	Drag-and-Drop	15
+5 	Database Structure	17
+6 	General Features	19
+6.1	Index Page	19
+6.2	Contact Page	20
+6.3	Color Changer	20
+6.4	Inline Editing and Deletion	21
+6.5	Exporting Tests	22
+	References	25
+	Appendix I: Database Structure	26
+	Declaration of Authorship	27
+
+List of Abbreviations
+AJAX			 Asynchronous JavaScript and XML
+CSS			Cascading Style Sheets
+DOM 			Document Object Model
+HTML 		Hypertext Markup Language
+JPEG			Joint Photographic Experts Group
+MVC 			Model-View-Controller
+MySQLi		MySQL Improved
+PHP 			PHP: Hypertext Preprocessor
+PNG			Portable Network Graphics
+SQL			Structured Query Language
+SVG 			Scalable Vector Graphics
+XML			Extensible Markup Language
+1    Introduction
+This documentation provides an overview of an application developed for the creation and management of web-based assessment tasks in three different formats. The application consists of a user-friendly interface to a database structure for storing the created tests and allows its users not only to generate new tests, but also to edit, delete, view, and run existing tests. Thus, it constitutes a tool that can be used by administrators of e-learning platforms, who do not need to have programming skills on their own, to create interactive exercises for their learners. These exercises go beyond the traditional multiple-choice tests commonly used in web-based learning environments: Users of the e-test editor application can build crossword, dynamic multiple-choice, and drag-and-drop tests, thus offering learners a variety of online exercises that can increase motivation and be tailored to the requirements of different topics.
+Modern HTML5 technologies in combination with PHP-based server-side components provide the technological foundation that allows for the implementation of such interactive exercises. While most of the general functionality of the e-test editor is implemented on the client-side using JavaScript, the server-side parts mainly take care of the communication of data to and from the database. The following sections will describe in detail the overall organization of the code, as well as the database structure and the specifics of the implementation of each of the three testing formats. Moreover, the implementation of general features of the interface, which aim at making the management of the tests as easy and user-friendly as possible, will be outlined briefly. Before the technological aspects mentioned above are discussed, a brief user guide will be provided to explain the main aspects of the user interface for end-users.
+2    User Guide 
+The application is started by accessing the 'index.php' file in the browser. This page allows the user to choose a format for creating a new test by clicking on one of the big buttons on top, which contain the icons and names of the formats. Hovering over one of these buttons will display a short description of the format in question. Apart from this, in case tests have been stored to the database already, the user can work with these tests. They are displayed in a table, which can be sorted according to the criteria given in the table header by clicking on any such criterion. The gray triangle appearing next to the current order criterion indicates whether the tests are displayed in descending or ascending order, and it can be clicked to reverse their order. By checking or unchecking the checkboxes next to the table the user can limit the display to one or several testing formats, which might prove useful if one is searching for a specific test in a table containing a great number of tests. Clicking on one of the tests in the table activates the buttons below, allowing users to choose whether they want to edit, view, delete, or run the selected test. 
+To keep the organization of the application, and thus also navigation, as simple as possible, all pages can be accessed via the interface on the index page, as described above. Therefore, the application does not contain a menu as it is part of many traditional web pages. Instead, the header on top of the page will let users know which part of the application they are currently working with, and clicking  on the 'Home' button on the right will always take them (sometimes after asking for confirmation) back to the index page. Clicking on the author's name in the page footer will open the contact page in a new tab, whereas the small colored squares in the bottom right corner allow users to choose their preferred theme color for the application. 
+	The different pages for working with the tests are designed to be as self-explanatory as possible. Short instructions on how to proceed are given on each page. In general, when creating a new test or editing an existing test, questions and items can be added via form fields and/or buttons. Elements that have been added to the test can be modified by simply clicking on the text that needs to be changed. This will convert said text to an input field where the changes can be made. Pressing 'Enter' or clicking somewhere else on the page will apply the changes. Elements that can be deleted will display an 'X' on the right-hand side when hovering over them. Clicking on it will ask the user for confirmation before the deletion is carried out. When viewing a test, the user is given the option to change between a view that shows an empty version of the test and a solved view showing the solutions for all the questions in a test. Furthermore, solved and unsolved views of tests can be printed, as well as exported in two different image formats (note that these options might not be available in all browsers). Running a test means being given a fully functional interactive version of the test, as it would appear in an e-learning environment. The 'Check' button, which is available here, becomes active as soon as the user has provided a complete solution (that is, answers to all the questions/items currently displayed on the page) and will display feedback on the user's performance.
+While these explanations, along with the instructions given on the different pages, should be sufficient for end-users to work with the e-test editor, the following sections of this documentation will provide more information on the technological background and implementation of the application.
+3    Overall Organization of the Code
+The main part of the code base of the application consists of collections of interface files for each of the three testing formats, supplemented by their respective JavaScript and CSS files. The index page and the contact-form page are also linked with such individual client-side scripts and style sheets. Furthermore, a number of general scripts, as well as a general CSS file, are used by all parts of the application alike. On the server-side, these include, for instance, PHP support files, such as a class declaration file (class_db_connection.php) that can be used for creating objects which allow for an easy interaction with the database.  Its implementation is based on the MySQLi extension of PHP [INT 1]. Objects inheriting from this class have methods available that construct and carry out SQL queries for selecting, deleting, inserting, and updating database records. Furthermore, a configuration file (config.php) for setting constants and including scripts needed on all pages, as well as a collection of common functions (general_functions.php) are provided. Lastly, another support file (manage_tests.php) mainly receives the user input from the index page and re-directs to the required parts of the application. It also handles AJAX requests that are the same for all types of tests. Another collection of files used by all pages can be summarized as PHP page elements, containing templates for a page header, a page footer, and a form soliciting general test information (test name and level). These elements are basically the same for a number of different pages, on which the template scripts are included as needed. The general JavaScript file will be discussed in the context of the discussion of the JavaScript design under 3.1.
+Aside from these general components, the parts of the application handling the different testing formats are organized as follows: For each format, a 'newtest', an 'edittest', a 'viewtest', and a 'runtest' page are provided, containing the basic skeletons of the interface needed for performing the corresponding interactions with the tests. These files also set some important global variables that are used both in the supporting PHP and JavaScript files to indicate which type of test ('crossword', 'dynmc', 'dragdrop'), as well as which mode ('new', 'edit', 'view', 'run') is currently being handled. The application relies on these variables, as well as on the files being named consistently and using the correct labels for the testing formats, so that the common page header, for example, can link the correct files for each part of the application. 
+The PHP files for each testing format furthermore include a 'managetests' script, which is mainly responsible for handling AJAX requests made by the JavaScript component. These include saving new and changed tests to the database, as well as retrieving data of existing tests for the edit, view, and run modes. Furthermore, in the run mode, AJAX requests are used to dynamically retrieve questions and evaluate user input. This is transferred from the client- to the server-side, so that learners who are competent in using developer tools will not be able to find solutions to questions in the JavaScript code. Finally, the deletion of a test, which does not require a separate interface page and is instead triggered directly from the index page, is also handled by this managing script.
+Apart from the interface pages and the 'managetests' script, there is a 'templates' file for each testing format. This file contains templates for HTML elements that are dynamically added to the page with JavaScript. It is included on every interface page, but, as the templates are embedded in 'script' tags with the type 'text/template', they are ignored by the browser, while at the same time, they can be read by JavaScript to generate the respective HTML elements as needed.
+As the main functionality of the application can be found in its different JavaScript components, their organization will be discussed in more detail now. JavaScript rather than PHP was chosen as the main language, since some of the functionality required by the testing formats (such as drag-and-drop) simply could not be implemented in PHP. Therefore, all pages of the application contain a check, which will show a warning instead of the page content if JavaScript is disabled in the user's browser.
+3.1 General Design of the JavaScript Components
+As the application at hand requires the JavaScript components to efficiently handle both complex data structures (that is, all the data needed for defining a test and its single questions) and a user interface with a variety of different functions (such as, for example, adding new questions, changing questions, dragging items into containers, displaying a crossword grid, etc.), it was designed based on the Model-View-Controller (MVC) design pattern. The MVC pattern suggests organizing code by a strict separation of concerns, where the so-called 'model' manages all the data for the application, while the 'view' takes care of the visual representation that users interact with, and the 'controller' acts as an intermediary between the two, updating the model according to changes that are made by the user through the view [INT 2]. 
+Combining this concept of a separation of concerns with an object-oriented programming approach resulted in the following architecture of the JavaScript code: The general JavaScript file used by all parts of the application (js_general.js) provides class declarations for the classes 'E_Test', 'TestItem', 'View', and 'Control'. These contain general properties and methods that are needed by all (or at least several of) the different parts of the application (such as, for example, View-object methods for disabling or enabling the buttons on a page). In each of the JavaScript files for the three test types, three main objects are constructed: a test object, which inherits from 'E_Test' and represents the data model, a view object inheriting from 'View' for handling the user interface, and a control object that constitutes the controller and inherits from 'Control'. The different items of the test, as they are represented in the model, are defined by specific sub-classes of the 'TestItem' class that differ between testing formats (while dynamic multiple-choice and crossword tests have 'Question' objects with different properties, drag-and-drop tests have two different kinds, 'Item' and 'Container' objects). These sub-classes are used for storing all test items in a uniform format within the test model. 
+
+While the index and the contact page do not need a controller and a data model, as no data is manipulated here, they still both have a view object inheriting from the 'View' class, as some of their user interface functionality is shared with the pages for the testing formats. When one of the pages interacting with tests is called, the control object is initialized and takes care of initializing the model, as well as the view, with regard to the current mode ('new', 'edit' etc.). The initialization of the view includes the definition of event handlers for buttons and other parts of the user interface. Whenever such an event handler requires a communication with the model (e.g. when a new question is added via the user interface, it has to be added to the model as well), a control method is called that takes care of transmitting the changes, thus keeping a strict separation of concerns. 
+4    Implementation of the Testing Formats
+While the aspects of the JavaScript code discussed so far are the same for all parts of the application, the following sections will explain the most important components of the code for each of the specific testing formats.
+4.1 Crossword
+For the creation of crossword tests, the user is asked to provide a list of questions and answers via text input fields. Answers are checked against a regular expression, making sure that they do only contain letters of the English alphabet and/or numbers, so that no special characters or white spaces cause difficulties in the display of the crossword. Once at least two questions and answers are provided, a crossword can be generated by mouse click. The code for actually generating the crossword grid from the list of answers is stored in a separate file (crossword_generator.js) and constitutes a self-contained module with functions to receive a word list as input and give back the calculated crossword grid as a JavaScript object. Thus, this code could be used in any application, regardless of the form in which the crossword is to be displayed. 
+The algorithm of the crossword generator performs the following general steps: Given the list of words, it starts with a grid of 0 by 0 fields, to which it adds the first word in the list either in vertical or horizontal direction (decided randomly). Then the next word is retrieved from the list, and all possible positions for this word using the opposite orientation are computed (so if the first word was placed in horizontal direction, vertical direction will be tried first for the second word). A possible position is a position that shares a letter with at least one of the words placed already in the opposite direction, but does not border on or interfere with any other placed words. For all possible positions, the number of (legitimate) intersections is counted, and the position with the most intersections is chosen. If no possible position is found, the other orientation is tried as well (as this might result in possible positions if more than one word has been added before already). Once the best position is determined, it is stored for this word, and the crossword grid is expanded by adding the fields that are necessary to change it into a rectangle that accommodates the newly added word. This process is repeated for all words. If words cannot be placed during one round, the algorithm runs through them again after finishing with the list (as words that came after them in the list might have created possible positions for them), repeating this process until no more words were added during one run through the list of unplaced words. 
+The entire grid creation process is repeated as often as possible during three seconds (testing showed that this amount of time suffices for obtaining good results), each time starting with the word list given in a different randomly created order. Thus, the generator ends up with a number of different crossword grids at the end of the three seconds processing time (how many can be created depends on the number of words given and the processing speed), from which it chooses the best by applying the following criteria: First, as many words as possible should be placed. This is the foremost criterion, as the main aim is of course to include all given words in the crossword. Second, the ratio between how close the rectangle of the grid comes to a square and the size of the rectangle is taken as a criterion, as a good crossword grid without too many empty spaces should be as close to a square as possible and at the same time as small as possible. Should this ratio be the same for different crossword grids in question, the size is taken as a final criterion, again preferring smaller to bigger grids. The crossword grid thus determined as the best solution is returned, including an object literal holding the values for all fields of the grid, as well as lists of the placed words (along with their positions and the numbers by which they are identified in the grid) and unplaced words (of which ideally there are none).
+As this calculation process, which takes up some seconds, would freeze the page during its execution if it were started by a simple function call, a Web Worker [INT 3] is created for carrying out the generation process. This has the advantage of running in a different thread, so that it does not affect page performance and allows for an animation to be displayed while the code is running, as an indication for the user to wait. Before trying to spawn the worker, a check for browser support is carried out, and, in case Web Workers are not supported, the generator script is loaded directly and started via a function call. In this case, it is not possible to display the animation, but at least the script does not break down either.
+Once the generated crossword grid is delivered, the regular crossword JavaScript file takes care of storing its data to the model and displaying a visual representation for the user, adding a list of the questions below the grid. A notification is displayed in case not all of the given words could be placed, prompting the user to delete or change the unplaced words. When the user is satisfied with the generated grid, it can be stored to the database (see section 5). 
+Apart from the actual generation of the crossword grid, another challenge of implementing an online crossword task consisted in finding an appropriate way of allowing the user to fill in the crossword in the run mode. Simply making each field where a letter should be inserted a text input field, which the user would have to click on or navigate to via the keyboard, would result in a rather cumbersome interaction with the crossword. An alternative solution was found by not displaying any input fields in the grid by default, but instead asking users to click on the question for which they want to provide the answer. Upon this click, the fields containing this answer in the grid are turned into input fields, and the focus switches to the next input field of the word as soon as a letter is entered, so that the user can simply type in the word as a whole at once, making the interaction with the grid easier and more efficient.
+4.2 Dynamic Multiple-Choice
+While the implementation of dynamic multiple-choice tests did not require the creation of a complex algorithm, such as the one needed for the generation of crossword grids, a few challenging aspects of this testing format shall be discussed as well. As dynamic multiple-choice questions provide users with one answer option at a time, for which they have to correctly decide between true and false before the next option is shown, it seemed suitable to not fix the number of answer options for each question. Thus, the new and the edit mode, where new questions can be added via form fields, also provide buttons by which as many incorrect answer options as desired can be added to each individual question. This way, one test can contain questions with different amounts of answer options, making it more challenging for learners to judge whether any current option they are presented with might be wrong or correct. As, especially with a lot of answer options per question, the display of existing questions on the interface page could take up a lot of room causing the user to scroll a lot, a more compact solution for the display was found: By default, only the question text of existing questions is displayed, along with a clickable symbol by which the answer options of the question can be shown (and hidden again), so that they are available when necessary for further editing.
+It follows from allowing for a flexible number of answer options that, in the run mode, not only the solutions for questions should be hidden from the users (as explained in section 3), but also the number of options for each question. For this reason, only the questions themselves are retrieved from the database when a test is started, and answer options are then dynamically loaded via AJAX requests one at a time (or several at once, in case the solution to a question is to be displayed). In order to avoid making complicated database requests each time an option is called for, the server-side component retrieves all options of all questions when the test is first loaded from the database and stores them to the session, from which they are retrieved when an AJAX request is received. As a user could open several parallel tabs for running tests at the same time using the same session, the data stored for each test in the session is associated with a unique key created by using the timestamp of the time when the test was loaded.
+For displaying dynamic multiple-choice questions to the user in a clear and pleasant design, a possibility of displaying the answer options along with the input element for users to choose between correct and incorrect (without overloading the display with too much text) had to be found. Here, one of the graphical tools provided by the HTML5 standard proved useful: Simple symbols for marking an answer option as wrong (an x mark) or right (a tick) are drawn onto the page using the SVG element [INT 4]. Apart from saving loading time by taking the place of images, this has the advantage of making it easy to change the colors of the symbols. As shapes drawn within an SVG element are represented in the DOM as HTML elements, their properties can be accessed and manipulated just like other parts of the page with JavaScript. This is put to use in the run mode, where the symbols' colors are changed to indicate whether a user's choice for an answer option was correct or incorrect.
+Lastly, dynamic multiple-choice tests are the only test type where it was considered useful to allow for re-using questions from existing tests. Thus, the interface for creating or changing tests contains a selection box, which can be displayed upon request, and by which questions that already exist in the database can be imported to the current test. When such questions are added, they are displayed on the interface page along with the questions added manually via the form fields and can be changed or deleted just as the latter. This option to include questions from other tests, as well as the flexible amount of answer options per question, called for a database structure which is slightly more complicated than those of the other test types, and the details of which are explained in section 5. 
+4.3 Drag-and-Drop
+The implementation of the third type of tests makes use of the drag-and-drop functionality which is part of the HTML5 standard [INT 5]. While this feature is supported by all modern browsers, testing showed that the interpretation of the different kinds of events associated with the drag-and-drop functionality differs to some extent between browsers. The final version, which works across all major modern browsers, uses the following events: The elements which can be dragged (items) have an attribute 'draggable', which must be set to true, and listen to the events 'dragstart' and 'dragend'. Thus, when the dragging begins, the ID of the element which is dragged is saved as transfer data, the opacity of the element is reduced (as a visual cue for the user, indicating which item is currently being dragged), and an image of the element is attached to cursor, following it along the screen. Once the drag ends, the element's opacity is reset to normal. 
+Elements into which a dragged item can be dropped (containers), on the other hand, listen to four different events: 'Dragenter' and 'dragover' indicate what happens when a dragged element is moved over the container in question (both have to be present, to allow for support by all browsers). When those two events are registered, the default behavior of the container element is prevented (as all elements by default do not allow for a drop), and its border color is changed, in order to visually indicate that a drop is possible here. The 'dragleave' event is registered when a dragged element is moved out of a container and triggers resetting the border color to normal. Finally, the 'drop' event handler specifies what happens when an item is dropped into a container: The HTML-element representing the item is attached to the container (the ID stored in the transfer data is used to identify the element for this purpose), the border color of the container is reset, and the model is updated to reflect the relationship of this item belonging into this container.
+In order to make creating and editing drag-and-drop tests as user-friendly as possible, the functionality described so far is not only used when a test is run, but also in the new and edit mode. This means that, when working with a test, users can directly indicate which of the items they have created go into which containers by dragging and dropping them, so that they get an exact impression of what the final test will look and feel like. Another special feature of this test format is that in the run mode, there are two possibilities of how the test can be displayed: Learners can either see all items at once, drag them into the containers, and have the entire test checked, or they can choose to be presented with one item at a time. In the last case, an individual AJAX request is sent for each item to check whether the user's assignment to a container was correct or incorrect, in order to provide immediate feedback without making the solutions visible in the JavaScript code.  
+
+5    Database Structure
+Complementing the discussion of the implementation of the different testing formats, this chapter shall now explain how the data representing each test is stored in the MySQL database of the application. For a graphical representation of the database structure, see Appendix I. 
+The database is organized into a general and a test-specific level. On the general level, each test is represented as one row in the table 'tests', where general information, such as the name of the test and its creation date, is stored. The table 'test_types' represents all testing formats currently supported by the application, associating each format with its abbreviation, description, and so on. This information is primarily used to generate the content of the index page, where the user is presented with the different formats that can be managed with the e-test editor. The IDs of the test types are used in the table 'tests' to identify which specific tests belong to which format. Similarly, the table 'test_levels' contains the labels and numbers associated with the IDs of the test levels specified in the 'tests' table. This assignment to a level is not actually put to use in the application itself, but was introduced here to indicate how information that might be specific to an actual e-learning platform, such as the organization of tests into levels, can easily be integrated into the e-test editor once it is put to use in the context of such a platform.
+On the second level, different data for each test, depending on its format, is stored in the remaining tables of the database. The simplest structure here is the one for drag-and-drop tests: Each test is associated with a variable number of items (represented each by one row in the table 'dragdrop_items') and containers (represented each by one row in the table 'dragdrop_containers'). Item and container entries consist of an ID, the text to be displayed on the element, the test ID as a foreign key, and, in the case of items, the ID of the container the item  belongs to.
+The table structure for dynamic multiple-choice tests is somewhat more complicated. As each question can be associated with an arbitrary number of tests (see section 4.2), a look-up table ('dynmc_lookup') for representing the many-to-many relationship between tests and questions is necessary. The table containing the questions ('dynmc_questions') holds the question text, as well as the correct answer (as each question has one correct answer only), but cannot be used for storing incorrect answers, as the application allows for a variable number of the latter. Thus, incorrect answers are modeled as rows of a separate table ('dynmc_incorrect') and linked to the question they belong to by using this question's ID as a foreign key.
+Lastly, the database contains two more tables for data representing crossword tests. The table 'crossword_questions' contains questions along with their answers, the ID of the test they belong to, and information on where they are positioned in the crossword grid, that is, the x- and y-coordinates of their start field, their orientation (0 for vertical, 1 for horizontal), and the number by which they are identified in the grid display. This information, along with the general grid information stored in the table 'crossword_grid', which holds the number of fields in the x- and the y-direction for each test, is enough to compute the entire crossword grid. Strictly speaking, the way the crossword generator is currently implemented, the information given in the table 'crossword_grid' would not even be necessary for calculating the grid, as the positions of all the words taken together already define the extensions of the rectangle containing the grid. Storing these numbers, however, makes reconstructing the grid from the data stored in the database considerably easier. It furthermore allows for changes to the way crossword grids are constructed, for instance, if one should decide to adapt the algorithm to allow for empty rows or columns at the borders of the crossword (in order to make it a proper square, for example). Therefore, this kind of representation was chosen as the most suitable for representing crossword tests.
+6    General Features
+Apart from the parts of the application that manage the manipulation, display, and storage of the tests in different formats, some more general components of the e-test editor still need to be discussed. The following sections will deal with them.
+6.1 Index Page
+The first part of the application that users encounter is the index page. This page retrieves information about the test types that are currently available in the database, including their descriptions and icons. The latter are used for displaying buttons, which can be clicked in order to create a new test using the respective format. More testing formats could easily be integrated. Assuming that not all users might know what the different formats consist in, but avoiding cluttering the page with too much text, the descriptions of the formats are initially hidden and only appear when the user's mouse hovers for a moment over one of the buttons. 
+The lower part of the page displays the interface for working with existing tests. The script retrieves information about all tests currently stored in the database from the 'tests' table and displays them in an HTML table, initially ordered alphabetically by test names. As, depending on the size of the learning platform, the number of tests to be managed by the application could eventually amount to quite a huge number, it was considered useful to provide the user with some help for finding specific tests in the table. Therefore, different ways of manipulating the display of the table were introduced: First, the checkboxes associated with test types to the right of the table register when they are clicked, and, depending on whether they are checked or unchecked after the click, show or hide the rows of the table that contain tests of the respective type. Second, clicks on the table header allow for sorting the table according to different criteria. A click on one of the table column headlines triggers a function, which will, according to which headline was clicked, either take the test name, the test type, or the test creation date as the criterion by which the rows are sorted, using the JavaScript sort-function. This function is set to grab the text content of the respective table cells and computes the order of the rows accordingly. The direction of the sorting (ascending or descending) can also be manipulated by clicking on the arrow symbol appearing in the table header, causing the function to reverse the sorting if required.
+6.2 Contact Page
+There is another page that is not associated with the specific test types: The contact page can be reached via a button on the index page or by clicking on the author's name in the footer of each page. Apart from some information about the application and the author, this page contains a simple web form for the purpose of contacting the author. A message submitted by this form is handed to the mail function of PHP, which would (if the application ran on a server connected to the Internet and configured appropriately) take care of sending the message to the specified e-mail address. As the application is currently running on the local server provided along with it, a fake e-mail address is given here, and the message is saved the 'mailoutput' folder of the server environment.
+6.3 Color Changer
+In order to make working with the e-test editor enjoyable for a variety of users, it was attempted to find a way to somewhat adjust its interface design to the users' different tastes. This was achieved by choosing neutral shades of gray as colors for most of the parts of the application's interface pages and combining these with one theme color used for accentuated components, such as the headers of the different sections of a page. This theme color, though initially set to blue, can be changed by the user, who is given a choice between four different colors at the bottom right corner of the footer. Changing the color is made possible by giving all elements that should have the theme color as their background, font, or border color a respective class, and then, upon a click on one of the color buttons, changing the color of these classes using JavaScript. In order to ensure that the setting is effective also for future elements that are dynamically added to the page, rather than just selecting the elements with the classes in question and resetting their CSS, a style declaration inside the head of the page is updated each time a color button is clicked. 
+As administrators of e-learning platforms might work with the application  often, they might want it to remember their color choice, so that they do not have to reset the theme color each time they access the editor. This is made possible by using Local Storage, another part of the HTML5 standard [INT 6]. Each time a color button is clicked, a variable in the browser's local storage is set to point to the respective color. Whenever a page is loaded, the storage is checked for this variable (given the browser supports local storage). If a color value is found, the theme color is updated to this color. This mechanism not only helps the application 'remember' the color when the application is closed and re-using it the next time it is opened, but also provides an easy way of making a color change effective throughout the application (and not only on the page where the color button was clicked initially). 
+6.4 Inline Editing and Deletion
+Another measure that was taken to improve the user-friendliness of the application has to do with the way test data is edited in the new and edit modes: While new questions are mostly added via simple form fields, a way had to be found to allow users to easily make changes to the questions that have already been added to the page. Displaying them all in form fields or copying them to the form fields for adding questions both seemed rather confusing options. Therefore, a kind of inline editing was introduced to simplify making changes. For this purpose, all elements that the user should be allowed to change while working on a test, are given the class 'editable', once they are added to the test. The general 'View' class provides all view objects with a method that turns the content of an element with the 'editable' class attribute into a text input field upon clicking on it, setting the input field's value to the former text content of the element. Thus, the text the element contained before the click is ready for editing within the input field. When the element loses focus or when the 'enter' key is pressed (which supposedly is a familiar way of confirming one's input), the value of the input field is checked for appropriateness (e.g. for not being empty), and, if the check is successful, the input field is replaced by the new value. Also, an update of the model is initiated to reflect the changes made.
+Following the same line of thought of making the manipulation of added elements possible right at the place where the elements are displayed, the deletion of elements is done by clicks on 'X' signs that appear next to the elements on hover. These are hidden when the mouse is not currently over the element, in order not to clutter the page and to make it clearer which element will be deleted by a click. As deletion should not happen by accident, it is only carried out after asking the user for confirmation, which, if given, again triggers an update of both the view and the model, reflecting the change.
+6.5 Exporting Tests
+Administrators of e-learning platforms might consider it useful to be able to generate and save static versions of the tests they create, for example to send the solutions of a test to instructors or teaching assistants, who might not have access to the administration interface, or to include a picture of a test in some printed material accompanying an online course. As simply printing pages displaying  tests in the view mode might result in rather unsatisfactory displays of the tests (as the dynamically created styles are not reflected properly, and buttons etc. are included in the display), a possibility of creating suitable images of the tests and allowing the user to save or print these, had to be found instead. The canvas [INT 7] and SVG elements introduced by the HTML5 standard made creating such export options possible. Basically, the conversion of the HTML defining the display of a test into an image works as follows:
+
+When the user clicks on one of the export buttons in the view mode ('Download as PNG', 'Download as JPEG', 'Print Test'), an SVG element is created, into which HTML elements can be added inside a 'foreignObject' tag. This tag is filled with the test name as a headline, a copy of all HTML elements displaying the test itself, and a footer line. Next, a Blob object is generated from the SVG element. This Blob object can be used to generate a URL containing all the data of the original SVG, which then allows for the creation of an image with the URL as its source. As only styles defined inside the SVG itself (and not those in the style sheets linked on the page) will be applied to this image, all styles of all HTML elements inside the SVG's 'foreignObject' tag are copied to a style tag at the beginning of the SVG element before the Blob object is created. The image could then be displayed in an image tag, but, in order to allow for exporting it to non-SVG formats, such as PNG or JPEG, it is drawn onto a canvas instead. If the test is to be printed, the content of the page is temporarily replaced with this canvas, and printing is initialized. Once the print window is closed, the page's original contents are restored. If the user has chosen to download the test as an image, however, this is achieved by using the 'toDataURL' method provided by the DOM interface of the canvas element. This method allows for the generation of image files from the canvas content in different formats and is in this case set to either create a PNG or a JPEG file. In the latter case, the canvas' background color is set to white before the image is drawn onto the canvas (as a transparent background would otherwise appear black in the JPEG image). A hidden download link for the image file is created next and triggered right away, so that the user is presented with the download prompt of the browser and can decide where to save the image file. The elements added to the page during these steps (the canvas and the download link) are removed once the process is finished.
+It is important to note that the use of the technologies described here comes with some issues. First, at the time of writing this documentation, Internet Explorer did not yet support the 'foreignObject' element [INT 8], so that the process employed for converting HTML to an image will not work in this browser. The application tests for support of this element (as well as for the canvas element) before attempting to generate the image and will issue a warning in case no such support is found, suggesting the use of a different browser. Second, due to cross-origin policy issues, the 'toDataURL' method used to generate image files from the canvas to which the image was drawn using the Blob URL does not work in Chrome and Opera in this specific case, as long as the application is running on a local server (see [INT 9], for example). Thus, exporting images as PNG or JPEG files should, if the application is not installed on an actual web server, be tested in a modern version of the Firefox browser. Printing tests, however, will function as expected in both Chrome and Opera, as well as Firefox. Again, the application is configured to account for this problem by issuing a warning, if the download of image files is not available. 
+As the export options are not an essential feature of the e-test editor, and one of the goals of this project was the exploration of how modern HTML5 technologies can be applied to the implementation of web-based e-assessment, they were included in spite of the shortcomings explained above, in order to further demonstrate how the graphical tools provided by the HTML5 standard could improve the implementation and management of electronic tests. This example, along with the use of drag-and-drop events, Local Storage, Web Workers, and the dynamic manipulation of graphical elements in a test display using SVG, illustrates that HTML5 technologies provide a lot of powerful possibilities for Web developers to integrate interactive and complex tasks into e-learning environments.
+References
+Internet Sources (cited in the documentation)
+[INT 1] http://php.net/manual/en/book.mysqli.php, 06 May 2015.
+
+[INT 2] http://www.addyosmani.com/resources/essentialjsdesignpatterns/book, 
+	06 May 2015.
+
+[INT 3] http://www.w3.org/TR/workers/, 06 May 2015.
+
+[INT 4] http://dev.w3.org/SVG/proposals/svg-html/svg-html-proposal.html, 
+	11 May 2015.
+
+[INT 5] http://www.w3.org/TR/2010/WD-html5-20101019/dnd.html, 07 May 2015.
+
+[INT 6] http://www.w3.org/TR/webstorage/, 07 May 2015.
+
+[INT 7] http://www.w3.org/TR/2011/WD-html5-20110525/the-canvas-element.html, 
+	11 May 2015.
+
+[INT 8] https://developer.mozilla.org/en-US/docs/Web/SVG/Element/foreignObject, 
+	12 May 2015.
+
+[INT 9] http://blog.chromium.org/2011/07/using-cross-domain-images-in-webgl-
+	and.html, 11 May 2015.
+
+
+
+Further Internet Sources (used as reference during the coding process)
+http://api.jquery.com/, 07 May 2015.
+
+https://php.net/manual/en/, 07 May 2015.
+
+http://www.w3schools.com/, 07 May 2015.
+
+https://developer.mozilla.org/en-US/, 07 May 2015.
+
+
+Appendix I: Database Structure
+
+Declaration of Authorship
+I hereby declare that my Master’s Thesis in partial fulfillment of the requirements for the degree of Master of Arts (M. A.) with the title:
+
+Web-Based E-Assessment Beyond Multiple-Choice: 
+The Application of PHP- and HTML5 Technologies to Different Testing Formats
+
+is entirely my own work and does not involve any additional human assistance. I also confirm that it has not been submitted for credit before, neither as a whole nor in part and neither by myself nor by any other person. No resources or aids other than those cited have been used. All quotations and paraphrases but also information and ideas that have been taken from sources used are cited appropriately with the corresponding bibliographical references provided. The same is true of all drawings, sketches, pictures and the like that appear in the text, as well as of all Internet resources used. I am aware that in case of being found guilty of plagiarism, I shall bear the costs of any ensuing legal disputes as well as any additional sanctions. 
+
+
+Marburg			19 May 2015	
+
+XML-based Markup Languages in Human Language Technologies: 
+Three Examples
+
+by 
+
+Julia Neumann
+
+
+Paper submitted in partial fulfillment of the
+requirements for a graded credit for the course
+“Human Language Technologies”
+in Winter Term 2013/2014
+Submission Date: 17 December 2013
+Approved by: Dr. Peter Franke
+Philipps University Marburg
+Contents
+	List of Abbreviations	3
+1   	Introduction and Overview of XML	4
+1.1	XML as a Markup Language	4
+1.2	Advantages and Applications of XML 	5
+2   	XML-based Languages in HLT	6
+2.1	AIML	6
+2.2	OWL	7
+2.3	XSLT	8
+3   	Conclusions	10
+4   	References	12
+5   	Appendix	14
+5.1	XML Example	14
+5.2	AIML Example   	15
+5.3	OWL Example	16
+5.4	XSLT Example	17
+
+List of Abbreviations
+AIML			Artificial Intelligence Markup Language
+DTD			Document Type Definition
+HLT			Human Language Technologies
+HTML			Hypertext Markup Language
+NLP			Natural Language Processing
+OWL			Web Ontology Language
+SGML			Standard Generalized Markup Language
+W3C			World Wide Web Consortium
+XML			Extensible Markup Language
+XPath			XML Path Language 
+XSLT			Extensible Stylesheet Language Transformations
+ 
+1    Introduction and Overview of XML
+The aim of this paper is to exemplify how XML-based markup languages are used in contemporary human language technologies (HLT). In order to do so, three examples and their recent applications will be discussed. Furthermore, by means of a comparison of these example languages, it will be shown that XML-based languages, in spite of the limitations each single language might have, can in general support HLT significantly in a variety of ways.
+But before we come to the discussion of examples, this introduction shall provide a general overview of the concept they are all based upon, that is, of XML, the Extensible Markup Language. The W3C defines XML as “a simple text-based format for representing structured information” [INT 1]. XML is a modification of SGML (the markup standard on the basis of which HTML was developed) and has been introduced in 1998 (Lobin 2010: 17). Its current version (XML 1.0) is described in a W3C recommendation issued in 2008 [INT 2].
+1.1 XML as a Markup Language
+In order to understand the functionality of XML, the basic idea of markup has to be considered first: Markup is used for structuring text (or other data) according to its inherent logic independently of any specific manner of displaying it and thus makes it possible for different media and technologies to use it by applying general, simple methods (Lobin 2010: 19 & 58). 
+XML describes the logical structure of data by embedding its single parts into tags that mark them according to their function within the document (ibid.: 53). However, it is important to note that XML itself does not define the names of any specific tags to be used in the markup of a document (as XML-based languages and HTML do), but rather provides the user with the means for creating his or her own tags tailored to any specific purpose or domain [INT 1]. This is done in a so-called document type definition that contains a set of declarations of elements (identified in a document instance by the tag names) and attributes which allow for the specification of additional information within a tag (Lobin 2010: 34-35 & 69-71; see appendix 5.1 for an example). More specifically, these declarations specify what can appear between a start and an end tag in document instances, that is, which other elements and what kind of data an element can contain [INT 2].
+1.2 Advantages and Applications of XML 
+The use of this kind of syntax for the markup of data has the following advantages [INT 1]: Firstly, as XML is strict and each tag has to be closed or marked as a standalone tag, errors  (e.g. incorrect nesting) can be detected easily by a machine. Secondly, due to the presence of element and attribute names, XML-based documents are relatively easy to read and understand. Moreover, any of these documents can be processed by any XML tool. 
+These assets have led to the use of XML as the basis of a great variety of standards, including word processing, graphics and database formats [INT 1]. As applications thus differ a lot, so do the various specific XML-based languages.  Møller and Schwartzbach (2006: 45) suggest characterizing them as either data-oriented (representing large amounts of data that usually follow a common, relatively simple structure), document-oriented (describing the logical structure of natural language texts), protocol/programming-oriented (with complex syntactic structures that target the manipulation of data) or hybrid.
+2    XML-based Languages in HLT
+Considering this classification of XML-based languages, document-oriented languages might seem especially suited for NLP purposes. AIML (Artificial Intelligence Markup Language) can be regarded as belonging to this type, but languages structuring non-linguistic data (e.g. OWL, the Web Ontology Language) can be applied fruitfully to this field as well, and so can programming-oriented languages, such as XSLT (Extensible Stylesheet Transformations).
+2.1 AIML
+Our first example, AIML, has been developed as an easy-to-learn language for building and adapting chatbots [INT 3]. AIML is used to encode the knowledge base of the chatbot, that is, it provides the language patterns the bot needs to find appropriate answers to user input [INT 4]. It structures large numbers of language patterns in a simple, common form, and is thus not only document-oriented, but also shares some characteristics of data-oriented languages. The basic structure of an AIML document can be described as follows [INT 3]: Each unit of knowledge, called 'category', consists of a pattern element, containing a string of words that might match an utterance the user types in, and a template that defines the response the chatbot should provide for this input. These basic elements are supported by further features of AIML [INT 4]: For example, the pattern might contain placeholder symbols as well as 'variables' that can be set to contain certain words from the user input which can then be used in the chatbot output. Furthermore, AIML allows for symbolic reduction, as well as the handling of synonyms and  spelling errors by (instead of specifying the same template more than once) inserting an element that points to another pattern evoking the same response (ibid.). Other useful features are tags that can include programming source code or the possibility to 'link' a category to the chatbot's last utterance, which can support conversational flow (ibid.; see appendix 5.2 for examples). 
+These and other features, as well as the fact that a lot of AIML sets and interpreters are freely available on the web, have led to the development of a great amount of AIML-based chatbots [INT 5]. Contemporary HLT systems that use AIML are for example tutoring or pedagogical agents (Fialho et al. 2013; Silvervarg & Jönsson 2013) that are designed for supporting domain-specific conversation (for which special question – answer categories are coded) as well as small talk (for which existing AIML sets are used). As Bii (2013) suggests, AIML is also suited for allowing teachers and students in e-learning settings to build their own pedagogical chatbot systems that include knowledge from any school subject, due to its easy structure and the availability of user-friendly editors. 
+2.2 OWL
+While AIML is used for the markup of language patterns and operates on the surface level of NLP (Silvervarg & Jönsson 2013: 1224), OWL was designed to work on a deeper level. It was developed in the context of the Semantic Web, that is, of attempts to handle the huge amounts of data available on the Web in a more effective way by providing machine-readable descriptions of the content of online resources [INT 6]. OWL, which is specified in its most recent version (OWL 2) in a W3C recommendation from 2012 [INT 7], is thus used for knowledge representation, or, more specifically, it serves the purpose of formalizing knowledge about a domain in terms of defining classes, instances and properties of classes and instances [INT 6]. Such a description of domain knowledge can be called 'ontology', a term borrowed from philosophy that “refers to the science of describing the kinds of entities in the world and how they are related“ (ibid.). In contrast to the simple markup of information other XML languages are designed for, the main advantage of this kind of representation is that it supports reasoning on the basis of knowledge (e.g. properties of an instance can be inferred by the properties of a class this instance belongs to) in terms of formal semantics (ibid.). 
+The basic structure of OWL documents is described by the W3C as follows (ibid.): The header of the document contains general information about the ontology, while the actual definitions of classes and instances are specified in the body. Class definitions typically contain the specification of properties the class members share and a class name. By referring to this name, other classes can be identified as subclasses of that class (instances of a subordinate class are then automatically instances of the superordinate class as well). To define an instance, the minimal amount of information required is its identification as a member of a class (see appendix 5.3 for examples).
+OWL has been applied to various academic, commercial and medical domains and a number of OWL ontologies are publicly available on the Web [INT 8]. In HLT, OWL has for example been used as the basis for a system that generates fluent natural language texts containing the information present in an ontology, with the advantage that the same OWL representations can be used for generating texts in different languages, as the relations defined in the OWL ontology are language independent (Androutsopoulos et al. 2013). Another application of OWL that has for instance been used recently to integrate NLP services into mobile apps (Sateli et al. 2013) is the Semantic Assistants framework (Witte & Gitzinger 2008): Here, an OWL ontology describes characteristics of NLP services (such as information about tasks they can perform, resources they use etc.) in order to allow the system to select the service that is most appropriate for supporting a specific task the user is performing in a desktop application.
+2.3 XSLT
+After these discussions of languages that mainly serve for the markup of text and other data, it is now time to take a look at an XML-based language with a very different approach. XSLT, whose most recent version (XSLT 2.0) is specified in a W3C recommendation from 2007 [INT 9], is “a language for transforming XML documents into other XML documents, text documents or HTML documents” [INT 10]. Being a transformation language, it has been developed to describe declaratively how the elements of a source document shall be turned into elements of a target document that makes use of another, not necessarily XML-based language (Lobin 2010: 88-89). These transformation rules are defined in a document called XSLT stylesheet and can be applied to the source document by using an XSLT processor (ibid.).
+In an XSLT stylesheet, templates specify how any given input element has to be processed in order to create the corresponding target document structure [INT 10]. More specifically, the stylesheet contains the elements of the target language filled with XSLT elements that describe which sections of the source document the processor has to select to fill these elements (Lobin 2010: 89-91). The XSLT elements thus need to be able to point to the relevant parts of the source document. This is achieved with the help of XPath expressions, that is, with another XML-related standard that describes expressions for selecting specific parts of an XML-based document (ibid.). XSLT thus goes beyond the idea of a simple markup of information and displays functions similar to the ones of programming languages (there is, for example, also an 'if'-instruction that can specify that a specific transformation should only be carried out under certain conditions; [INT 9]; see appendix 5.4 for examples).
+XSLT is used in the context of a very large number XML applications, for example in web browsers, server structures or network appliances [INT 10] and has as well been included in HLT applications. For instance, Gill et al. (2012) describe a dialogue generation system that processes the utterances of the  dialogue characters by first generating XML-based representations and then using XSLT to transform these into the logical format that is used by the NLP component of the system. Similarly, XSLT can also be employed to automatically evaluate and extract information from spoken dialogue systems by transforming XML-based representations of dialogues between the system and its users into other formats that, amongst others, divide the conversation into sequences of turn-taking [INT 11]. Of course, XSLT is also used for the conversion of XML representations of written documents such as journal articles into other formats, thus making text available for processing by different NLP systems such as parsers, taggers or term extraction systems (e.g. Schäfer & Weitz 2012).
+3    Conclusions
+The previous sections have exemplified how XML can be used for the markup of natural language (AIML) and other data, such as units of knowledge (OWL), as well as for supporting the transformation of these data into other formats (XSLT).
+Of course, each of the languages presented here has its shortcomings: Using AIML for building successful chatbots, even if possibilities such as symbolic reduction, error handling etc. are used, still requires developers to code a huge number of categories by hand. As no understanding (or only very limited understanding, e.g. the recognition of a topic [INT 3]) is supported, conversational abilities of an AIML-based chatbot will always remain limited to predefined communication patterns, thus offering little flexibility and raising issues of robustness. 
+OWL ontologies certainly offer a lot of possibilities for knowledge representation. Still, similar to AIML categories, they have to be coded first, which requires a lot of work for domains that include many different classes and instances. Other than in AIML, some of this work might be avoided by using the possibilities of reasoning and options to combine different OWL ontologies: Other OWL ontologies can be imported by 'linking' them in the head of an OWL document (so that the classes defined there can be used without having to define them again) and classes, properties and individuals with different names in different ontologies can be declared to be equivalent [INT 6]. Furthermore, OWL might not be able to capture all kinds of knowledge, as for example procedural knowledge (that is, “knowledge exercised in the performance of some task” [INT 12]) is certainly difficult to represent in terms of classes and instances. 
+XSLT is helpful with regard to reducing hand-coding, as developers do not have to annotate data that is already available in another format again and can instead transform it automatically. However, as XLST was developed mainly for handling text-oriented documents with the primary goal to transform them into formats that are easier to read on the screen, it is not as well suited for the handling of non-linguistic data as other languages [INT 13]. Moreover, the concept of using another standard (XPath) nested into XSLT elements might not be easy to grasp for inexperienced users, so there might be some issues with regard to the user-friendliness of this standard. Still, XSLT is regarded as highly useful, having the same possibilities as general programming languages from a formal point of view, but being (in contrast to them) optimized for handling XML-based documents (Lobin 2010: 92).     
+Although the limited extent of this paper does not allow for a more exhaustive discussion of their features, advantages and limitations, we have seen that XML-based languages play a central role in a wide range of HLT applications. Due to the fact that XML allows developers to define any elements they might need, XML-based languages can be applied to a great variety of purposes and offer the possibility to support the processing of natural language at very different levels. 
+4    References
+Androutsopoulos, Ion / Lampouras, Gerasimos / Galanis, Dimitros. 2013. "Generating Natural Language Descriptions from OWL Ontologies: the NaturalOWL System." In: Journal of Artificial Intelligence Research. 48. November 2013. pp. 671–715. Available Online. URL: http://www.jair.org/media/4017/live-4017-7471-jair.pdf. Last access: 30 November 2013.
+
+Bii, Patrick. 2013. "Chatbot Technology: A Possible Means of Unlocking Student Potential to Learn How to Learn." In: Educational Research. 4(2). Februar 2013. pp. 218–221. Available Online. URL: http://interesjournals.org/full-articles/chatbot-technology-a-possible-means-of-unlocking-student-potential-to-learn-how-to-learn.pdf?view=inline. Last access: 30 November 2013.
+
+Fialho, Pedro / Coheur, Luísa / Curto, Sérgio / Costa, Pedro C. Â. / Abad, Alberto / Meinedo, Hugo / Trancoso, Isabel. 2013. "Meet EDGAR, a tutoring agent at MONSERRATE." In: Proceedings of the 51st Annual Meeting of the Association of Computational Linguistics. Sofia, Bulgaria. 4 - 9 August 2013. Available Online. URL: http://aclweb.org/anthology//P/P13/P13-4011.pdf. Last access: 28 November 2013.
+
+Gill, Alastair J. / Brockmann, Carsten / Oberlander, Jon. 2012. "Perceptions of Alignment and Personality in Generated Dialogue." In: Proceedings of the 7th International Natural Language Generation Conference. 30 May - 1 June 2012. Utica, USA. Available Online. URL: http://aclweb.org/anthology//W/W12/W12-1508.pdf. Last access: 29 November 2013.
+
+Lobin, Henning. 2010. Computerlinguistik und Texttechnologie. Paderborn: Fink. 
+
+Møller, Anders / Schwartzbach, Michael I. 2006. An Introduction to XML and Web Technologies. Harlow: Addison-Wesley.
+
+Sateli, Bahar / Cook, Gina / Witte, René. 2013. "Smarter Mobile Apps through Integrated Natural Language Processing Services." In: Proceedings of the 10th International Conference on Mobile Web Information Systems. Paphos, Cyprus. 26 - 28 August 2013. Available Online.  URL:  http://www.semanticsoftware.info/
+	system/files/mobiwis13_android.pdf. Last access: 30 November 2013.
+
+Schäfer, Ulrich / Weitz, Benjamin. 2012. "Combining OCR Outputs for Logical Document Structure Markup: Technical Background to the ACL 2012 Contributed Task." In: Proceedings of the ACL-2012 Special Workshop on Rediscovering 50 Years of Discoveries. Jeju, Republic of Korea. 10 July 2012. Available Online. URL: http://aclweb.org/anthology//W/W12/W12-3212.pdf. Last access: 30 November 2013.
+
+Silvervarg, Annika / Jönsson, Arne. 2013. "Iterative Development and Evaluation of a Social Conversational Agent." In: Proceedings of the International Joint Conference on Natural Language Processing. Nagoya, Japan. 14 - 18 October 2013. Available Online. URL: http://www.aclweb.org/anthology/I/I13/I13-1174.pdf. Last access: 28 November 2013.
+
+Witte, René / Gitzinger, Thomes. 2008. "Semantic Assistants - User-Centric Natural Language Processing Services for Desktop Clients." In: Proceedings of the 3rd Asian Semantic Web Conference. Bangkok, Thailand. 8 - 11 December 2008. Available   Online.   URL:   http://www.semanticsoftware.info/system/files/witte_
+	gitzinger_semantic_assistants_aswc08.pdf. Last access: 30 November 2013.
+
+
+Internet Sources
+[INT 1]	http://www.w3.org/standards/xml/core, 21 November 2013.
+
+[INT 2] http://www.w3.org/TR/xml/, 23 November 2013. 
+
+[INT 3] http://www.alicebot.org/aiml.html, 28 November 2013.
+
+[INT 4] http://www.pandorabots.com/pandora/pics/wallaceaimltutorial.html, 
+	28 November 2013.
+
+[INT 5] http://en.wikipedia.org/w/index.php?title=AIML&oldid=581623850,  
+	28 November 2013.
+
+[INT 6] http://www.w3.org/TR/2004/REC-owl-guide-20040210/, 30 November 2013.
+
+[INT 7] http://www.w3.org/TR/2012/REC-owl2-overview-20121211/, 
+	30 November 2013.
+
+[INT 8] http://en.wikipedia.org/w/index.php?title=Web_Ontology_Language&oldid=
+	  577307221, 30 November 2013.
+
+[INT 9] http://www.w3.org/TR/2007/REC-xslt20-20070123/, 29 November 2013.
+
+[INT 10] http://www.w3.org/standards/xml/transformation, 29 November 2013.
+
+[INT 11] http://www.google.com/patents/US8589172, 30 November 2013.
+
+[INT 12] http://en.wikipedia.org/w/index.php?title=Procedural_knowledge&oldid=
+	  542487538, 6 December 2013.
+
+[INT 13] http://en.wikipedia.org/w/index.php?title=XSLT&oldid=583369872,
+	  7 December 2013.
+
+5    Appendix
+This appendix presents hypothetical parts of documents illustrating the different markup languages described in this paper. It does not aim to provide complete document instances, but rather commented bits of markup that might supply a more precise picture of the syntax structures described above.
+5.1 XML Example
+The following examples (created by the author on basis of Lobin 2010: 33-38 & 69-74) represent element and attribute declarations as they might appear in a DTD that specifies an XML-based language used for a simple markup of poems:
+1 <!ELEMENT poem (title, author, body)>
+→ In a document instance, the tags <poem>...</poem> can appear, enclosing elements embedded in the tags <title>...</title>, <author>...</author>, <body>...</body>.
+
+2 <!ELEMENT body (#PCDATA | stanza)*>
+→ Within <body> tags, any sequence of text units (PCDATA) and units embedded in <stanza> tags might appear. | stands for “or”, * means that the elements in the brackets might appear more than once, but do not have to appear at all (Lobin 2010: 37). XML provides a number of these logical connectors for element declarations.
+
+3 <!ATTLIST author
+4			age		NMTOKEN		#REQUIRED>
+→ The <author> tag must (#REQUIRED) contain an attribute “age” that can be filled with a sequence of numbers, letters and symbols (NMTOKEN; Lobin 2010: 69-70): e.g. <author age=”50”> ...</author> or <author age=”unknown”>...</author>.	
+5.2 AIML Example 		
+This example (created by the author on basis of [INT 3] and [INT 4]) illustrates what AIML categories might look like:
+1 <category>
+2 <pattern>NO, I PREFER *<pattern>
+→ When the user types in this sentence, the category is called. * is a placeholder and the portion bound to it can be included in the output using the tag <star/> (see line 6).
+3 <template>
+4 <that>DO YOU LIKE STAR WARS?</that>
+→ This specifies that this category is only called when the previous output of the chatbot has been “Do you like Star Wars?” (and the user has answered “No, I prefer ...”, as specified in the pattern.)
+5 <think><set name=”topic”>movies</set></think>
+→ The topic parameter in the memory of the chatbot is set to “movies”, so that it can help with selecting the correct categories for the next turns (e.g. the user might soon ask “Which one do you like best?”, a pattern that might occur several times in the AIML document with different answers for different topics).
+6 Why do you prefer <star/> to Star Wars?
+→ The output, with <star/> referring to a part of the user input.
+7 </template></category>
+
+The second category uses the <srai> tag for symbolic reduction: It specifies for a more complex user input that the template of the category above can be used:
+1 <category>
+2 <pattern>I LIKE IT, BUT I PREFER *</pattern>
+3 <template><srai>NO, I PREFER <star/></template>
+4 </category>
+5.3 OWL Example
+The following illustrations of OWL class and instance definitions (created by the author on basis of [INT 6] and [INT 7]) demonstrate how OWL could be used to formalize knowledge about animals:
+1  <owl:Class rdf:ID=”fish”>
+2	 <rdfs:subClassOf rdf:resource="#animal" />
+3	 </owl:Class>
+→ A class with the name “fish” is defined as being a subclass of the class “animal” (which we will assume to be defined elsewhere).
+4  <owl:Thing rdf:ID="trout" />
+→ There is an instance “trout”. 
+5  <owl:Thing rdf:about="#trout"> 
+6  <rdf:type rdf:resource="#fish"/>
+7	 </owl:Thing>
+→ The instance “trout” is declared to be a member of the class “fish” (and thus also belongs to the superordinate class “animal”).
+8  <owl:ObjectProperty rdf:ID="hasColor"> 
+9  <rdfs:domain rdf:resource="#fish"/>
+10 <rdfs:range rdf:resource="#color"/> 
+11 </owl:ObjectProperty> 
+→ Here, a property is defined: It is stated that the instances of the class “fish” have a property called “hasColor” that can be specified using the instances of a class called “color” (which we will assume to be defined elsewhere and having instances such as “green”, “brown” etc.).
+12 <owl:Thing rdf:ID="trout">
+13 <hasColor rdf:resource="#brown" />
+14 </owl:Thing>
+→ The instance “trout” is described as having the color “brown”.
+5.4 XSLT Example
+In order to exemplify XSLT, the following lines (created by the author on basis of Lobin 2010: 85-92) illustrate how simple language patterns that are available in AIML markup could be transformed into an HTML document.
+The source document includes AIML categories such as:
+1 <category><pattern>HELLO!</pattern>
+2 <template>Hi! How are you?</template></category>
+In the HTML target document, this should look as follows:
+1 <p>User input: HELLO!</p>
+2 <p>Chatbot output: Hi! How are you?</p>
+
+For this purpose, the XSLT stylesheet includes the following lines:
+1 <xsl:template match=”category”>
+→ This means that the following lines should be applied to the content of the <category> tags in the source document.
+2 <p>User input:
+→ Parts of the HTML target document that are not to be inferred from the AIML source document are described here.
+3	<xsl:value-of select=”category/pattern” /></p>
+→ The value of the “select” attribute is an XPath expression that tells the processor which part of the source document to insert at this point, namely the part that is embedded in <pattern> tags which themselves are embedded in <category> tags.
+4	<p>Chatbot output:
+5 <xsl:value-of select=”category/template” /></p>
+→ The same procedure is applied to the <template> part of the AIML category.
+6 </xsl:template>
+
+An “Uber-Exceptional” Perspective on Borrowing: 
+A Corpus-Based Case Study of the German Loan Morpheme “über” in Present-Day English
+
+
+by 
+
+Julia Neumann
+
+
+Paper submitted in fulfillment of the
+requirements for a graded credit for the course
+“The New Media in Linguistics: Corpus Linguistics”
+in Summer Term 2014
+Submission Date: 19 September 2014
+Approved by: Prof. Dr. Rolf Kreyer
+Philipps University Marburg
+Contents
+	Abstract	3
+1   	Introduction	4
+2   	Theoretical and Empirical Background	6
+2.1	General Aspects and Terminology	6
+2.2	Adaptation of Loans	7
+2.3	German Loans in English	8
+3   	Corpus Study	10
+3.1	“über” as an Example of a German Loan Morpheme	10
+3.2	Choice of Corpus	12
+3.3	Corpus Research on “über”	13
+3.3.1 Orthography	13
+3.3.2 Grammar	14
+3.3.3 Semantics & Usage	15
+3.3.4 Comparison to the Donor Language	17
+4   	Conclusions	19
+	References	20
+	Appendix I: Speaker Intuitions	22
+	Appendix II: English Dictionary Information	24
+	Appendix III: Research Results	26
+	Table 1: Different Word Classes after “über” in English	26
+	Table 2: 100 Words Used Most Commonly after “über” in English	26
+	Table 3: Different Word Classes after “über” in German 	28
+	List of 100 Items Used Most Commonly after “über” in German	28
+	Appendix IV: German Dictionary Information	29
+	Confirmation of Authorship	30
+
+Abstract
+Loan words have been said and shown to often take on a 'new identity', that is, to acquire characteristics in the recipient language that differ from the characteristics of the source words in the donor language. The aim of this study is to determine to which extent the same holds true for a loan morpheme that is used in hybrid creations in the recipient language. For this purpose, the German loan morpheme über, which is said to be currently used by English speakers as a prefix, is investigated by means of a corpus analysis using data from the enTenTen12 corpus. The 'new identity' of the loan morpheme that is thus revealed includes orthographical, grammatical and semantic adaptations, which are in contrast to some of the linguistic aspects of the German source morpheme. 
+1    Introduction
+One of the most noticeable kinds of language change – and also one that is very prone to causing heated debates among the speakers of a language – is borrowing. A classical paper on this topic defines borrowing as “the attempted reproduction in one language of patterns previously found in another” (Haugen 1950: 212). While such a reproduction of English forms in the German language is very common, and also well researched, the German influence on English, on the other hand, is much smaller, and has also received less attention in linguistic research (Stanforth 1993: 431-432). However, a look into an anecdotal collection of German loan words described by speakers from a number of different languages reveals astounding insights with regard to which German words have found their way into (amongst others) the English language (Limbach 2007; see 2.3 for more empiric approaches towards collecting German loanwords). One among the many interesting cases that are listed there draws special attention, as it is actually not a word in its own right, but rather a prefix. The morpheme über (or uber/ueber, as it might be spelled in English as well) is, according to the speakers whose opinions are published in the book, used in American and British English, especially by adolescents, but also in English newspapers, as a prefix for intensification (Limbach 2007: 67-68). Thus, a speaker from the USA states:
+The customary words to intensify expressions - really, super, pretty, hella, totally, and awesomely - have been amplifying American teenage speech for some time. Recently, "über" has entered into this grouping of words, which aid in proclaiming verbal exclamation and excitement. Relieved of its umlaut in American English, "uber" is typically partnered with an adjective or noun to express an additional level of positive or negative sentiment. [...]  (Limbach 2007: 68)
+One aim of the research presented in this paper is to investigate to which extent such speaker intuitions can be confirmed by a systematic analysis of corpus data. In particular, the case of the prefix über has been chosen because of its rather unusual nature of being a loan morpheme rather than a loan word. As Stanforth (1996: 30) points out, it is much more common for English to borrow entire words from German, rather than parts of a word. His research only revealed one prefix and one suffix as being borrowed from modern German into English (Stanforth 1996: 107-108). Accordingly, in the comprehensive collection of German loan words published by Pfeffer and Cannon (1994: 117), bound forms take up only 0.7% of the German loan material found in the English language. It is thus not surprising that most of the research done on German loans in English seems to have focused on loan words, rather than loan morphemes. Such research has shown that a loan word often tends to “assume an identity of its own in terms of meaning and usage” (Meier 2000: 169) – for example, Stubbs (2001: 186-189) uses corpus data to show that the usage of the German word Angst in English is indeed quite different from the way it is most often employed in German, as the loan word, which carries strong evaluative connotations, usually denotes an existential dread that is about trivial matters, and often occurs in phrases such as teenage angst. 
+Assuming that a borrowed morpheme might have a quite different status than a borrowed word, as it cannot stand on its own, but rather always has to occur in connection with other, presumably mostly native morphemes, the research presented below focuses on the question of whether such a development of a 'new identity' can be identified for the prefix über in the English language. Corpus data is used to investigate which kinds of words this prefix can be attached to (in comparison to its German equivalent), and whether any constraints or particularities can be detected with regard to the contexts in which it is used. However, before the results of this investigation can be presented, a few more detailed remarks on theoretical aspects and previous research are necessary in order to establish more clearly the ground on which the research is carried out.
+2    Theoretical and Empirical Background
+The following sections will introduce some of the main theoretical concepts on which the research presented below is based, as well as some important results of related linguistic research.
+2.1 General Aspects and Terminology
+While it has been pointed out repeatedly that the term 'borrowing', as it has been defined in the introduction, is actually a rather inadequate description of the corresponding linguistic phenomenon (e.g. Haspelmath 2009: 37, Haugen 1950: 211), it is still used here due to its widespread acceptance in linguistics. In accordance with the Concise Oxford Dictionary of Linguistics, any material that enters a language by the process of borrowing will be called a 'loan' [INT 1]. Although the term 'loan word' is sometimes also used in the same broad sense (Haugen 1950: 213-214), for the purpose of this study, it seems more adequate to reserve it for words only (in contrast to morphemes, such as prefixes). Furthermore, the language from which some material is borrowed will be given the term 'donor language', while the language which borrows it will be called 'recipient language', based on Haspelmath (2009: 37).
+A distinction which is especially important for the purpose of this study is the one drawn by Haugen (1950: 214-221) between a 'hybrid' or 'loan blend' and a 'hybrid creation': While the first two terms describe a word which is created based on an existing model word in the donor language, of which one part is borrowed while another part is replaced by its native translation, the term 'hybrid creation' refers to a word that is built by a combination of some loan material and some native material, but for which no model word exists in the donor language. All of these hybrid forms are special because of the fact that some kind of morphological analysis by the speakers of the recipient language must have taken place (Haugen 1950: 214), whereas  in most cases, borrowed elements enter the recipient language as unanalyzable, mono-morphemic units, no matter what their internal structure might have been in the donor language (Haspelmath 2009: 37).
+Why now do languages resort to material from other language in the ways described above? There is ample evidence for the fact that languages in general have no need to do so, but rather possess, and in many cases also employ, the means to express whatever new concepts are needed in communication by creating their own, native lexical expressions (Haspelmath 2009: 35). Thus, as has been remarked by Meier (2000: 169), there must be some kind of additional profit of using a foreign expression instead of native material, which he seems to see mainly in the greater expressive power of loans, arising from their foreignness and greater salience. In addition to that, it has been argued that loans sometimes may offer a more concise way of expressing what the speaker wants to say, or that they can be used for stylistic reasons, such as alluding to the culture of the donor language, or conveying a certain attitude of the speaker (Stanforth 1993: 433-434).
+2.2 Adaptation of Loans
+No matter why an expression is borrowed, its linguistic features will often not fit into the system of the recipient language (e.g. because of different sound systems, or different inflectional categories such as gender), and thus have to be adjusted (Haspelmath 2009: 42). Several  classifications for identifying different levels in this process of adaptation have been suggested (see, for example, Pfeffer & Cannon 1994: 124-125, Haugen 1950: 217). However, with regard to the aims of the research presented in this paper, only some aspects that mark the adaptation of a loan shall be mentioned here. 
+First of all, as has been mentioned, the sounds of the loan might have to be adjusted to fit into the phonological system of the recipient language, and the same might be true for its orthography. For German loans in English, it has been noted that factors such as the capitalization of nouns (Meier 2000: 174) or the use of an umlaut (Pfeffer & Cannon 1994: 115) might change when the loan is adapted to the English system, resulting in capital letters being converted to lower case, and umlauts being replaced by normal vowels. With regard to morphology, loans might have to be assigned features which they did not possess in the donor language, such as a gender, and their inflectional patterns might have to be adjusted (Haugen 1950: 217). It has been noted, however, that this hardly raises any issues for German loans in English, as the inflectional morphology of English (with no gender, no article / adjective inflection, only the genitive case, etc.) is much simpler than the German one, so that in the process of borrowing, morphological features are reduced rather than added (Stanforth 1996: 166).
+As has been mentioned before, not only the grammatical features of a loan might change after it has entered the recipient language, but also its meaning and patterns of usage. With regard to meaning change, Stubbs (2001: 185) goes as far as stating that German loans in English are actually “most unlikely to mean exactly the same [as in German], since they are used in a quite different linguistic context”. One important aspect to note regarding usage seems to be the fact that loans are often originally used only in contexts that show some connection to the donor language, while later on, this constraint might loosen, allowing for the loan to be more generally used (Stanforth 1993). In fact, Pfeffer and Cannon (1994: 124) state that this change in the context of use is a necessary condition for a loan to become productive in the recipient language.
+2.3 German Loans in English
+While several important aspects of German loans in the English language have already been mentioned in the previous paragraphs, this last section of chapter 2 will attempt to give a general overview of what previous research has shown with regard to the influence of German on English. It has been remarked by several authors (see, for example, Stubbs 2001: 179, Stanforth 1996: 172) that the English language has been especially susceptible to borrowing throughout its history, even though this trend might have somewhat decreased in the 20th century (Stubbs 2001: 179). Possible Reasons are the simple morphology of English, which allows for an unproblematic integration of new material, as well as the lack of puristic attitudes in Great Britain and the United States (Stanforth 1996: 110 & 171). Thus, a number of languages can be said to have had a significant influence on the English lexicon, and, even though an entirely objective ranking of these languages seems to be quite impossible, researchers agree that German should figure among the six most important contributors (Stubbs 2001: 178, Pfeffer & Cannon 1994: 131-132). The exact number of words which have been borrowed from German is equally impossible to determine, for, as Stubbs (2001: 183) remarks: “There can be no definitive list of words which are in English. The vocabulary of a language is an open set, with words coming and going all the time.” The main part of German loans seems to be made up of scientific and technical terms, due to the fact that German was an important language of scholarship during the 19th and 20th century (Stubbs 2001: 180, Stanforth 1996: 172). Estimates of the number of German loans that are used in everyday English and known by most native speakers range from around 200 to 300 (Stanforth 1996: 159) to around 75 (Stubbs 2001: 181). In conclusion, it has been said that German loans make up a small, but stable and easily integrated part of the English lexicon (Stanforth 1996: 164), and that they “have been and continue to be extremely useful in English, by comparison with items from other languages” (Pfeffer & Cannon 1994: 132).
+
+
+3    Corpus Study
+Based on the theoretical and empirical background that has been depicted in the previous sections, the rest of this paper presents a corpus-based investigation which seeks to demonstrate the extent to which the assumptions made so far with regard to a 'new identity' of loans hold true for a German loan morpheme.
+3.1 “über” as an Example of a German Loan Morpheme
+As it has been mentioned before, it is impossible to pin down the exact number of German loans in English, so, rather than aiming to provide an exhaustive picture of German loan morphemes, this study focuses on one specific case: the prefix über. This prefix has been chosen for the following reasons: First, according to the speaker intuitions in Limbach (2007: 67-68), it seems to be a prefix that is currently widely used in English, so that it allows us to track down what seems to be a language change in process. The fact that Stanforth (1996: 107) presents ur as the only prefix English has borrowed from modern German, as well as the very low number of hits in the British National Corpus [INT 2], which does not go beyond the late 20th century [INT 3], confirms the assumption that the use of über as a prefix is a rather current phenomenon. Second, the fact that it appears in the collection by Limbach (2007) confirms that it is a linguistic item which is recognized by the speakers as foreign, but common enough to be known and accepted by them, which is a good indicator of its status as an established loan. Furthermore, the speaker intuitions presented in this collection provide a good starting point for a systematic research. 
+The characteristics those speakers mention, and which could be important indicators of the 'new identity' of über in the English language, can be summarized as follows (see Appendix I for the complete statements): 
+orthography & phonology: The umlaut seems to be replaced often by a normal vowel (<u> or <ue>) in writing, and pronounced as [ju].
+grammar: The prefix is combined with mostly native material, which can be either an adjective or a noun.
+semantics & usage: über is used as an expressive intensifier that provides flair, can express a contemporary or sarcastic touch, and is similar in meaning to (or a superlative form of) other English items such as super, mega, really, pretty, hella, totally, awesomely.
+Apart from speaker intuitions, dictionaries have been considered to be a means of tracking down loans (see, for example, Stubbs 2001: 171, Meier 2000). For this reason, the online versions (as these can be considered to be more up-to-date than the print versions) of several monolingual English dictionaries [INT 4-7] were checked in order to complement the speaker statements summarized above.  All four dictionaries list über (sometimes under alternative spellings; see Appendix II for the full entries) as a prefix (though they do not state explicitly to which parts of speech it can be attached), and seem to agree on the fact that the orthography and pronunciation often is adapted in the ways described above. With regard to semantics, all dictionaries refer to the superlative meaning of über, while the possibility of a sarcastic use is in general not mentioned. Additionally, some of the dictionaries specify that über can be used to refer to an outstanding or extreme example of some kind of thing or person. super is listed as a synonym in the Longman Dictionary of Contemporary English [INT 5] and the Merriam-Webster Dictionary [INT 6]. Further aspects that can be gathered from the dictionaries are the register of use, which is identified as informal [INT 5], as well as some etymological information. While the Oxford English Dictionary [INT 7] indicates that the prefix was modeled after the German loan word Übermensch (which is in accordance with what a speaker in Limbach (2007: 68) suggests), the other dictionaries only state that it goes back to the German über. Dictionary information on loans, however, can be imprecise (Meier 2000: 175), and, as it can be seen here as well, often does not clarify the use of an expression sufficiently. An analysis of corpus data, as it will be presented in the next sections, is much better suited for that purpose.
+3.2 Choice of Corpus
+There are several factors that determined the choice of an appropriate corpus for this study: First, it has been noted that loans, due to the facts that they are usually content words and not part of the core vocabulary, often appear with a relatively low frequency in corpora (Onysko & Winter-Froemel 2011: 1556). This called for choosing a very large corpus so that enough occurrences of the loan in question would be available for an analysis. Second, as has been mentioned in the previous section, a corpus of relatively new data was required, as the use of the prefix über seems to be a rather recent phenomenon in English. Third, Stubbs (2001: 174) points out that “a word is often current for years in the spoken language before it appears in published texts“, and, as über seems to be often used in informal and / or teenage speech, a large corpus of authentic current-day, informal spoken language would probably have been the ideal choice. 
+As, however, such a corpus could neither be found, nor compiled within the scope of this study, it was decided to use the enTenTen12 Web corpus instead. This 12-billion-word, part-of-speech-tagged corpus, which was created by crawling the Web in 2012 (Jakubíček et al. 2013), offers the following advantages: It not only provides a huge amount of up-to-date language data, but, as it was compiled from the Web,  it can also be expected to contain a reasonable amount of informal language, such as is used in chat rooms etc., which might come close to spoken language. Furthermore, the interface to this corpus provided by Sketch Engine [INT 8] also makes available the deTenTen10 corpus, which was created in the same fashion, and thus supplies comparable data for German, which will be needed in this study for comparing the loan morpheme to its German source. The deTenTen10 corpus only contains about 2.8 million words [INT 9], but as the German prefix should be much more frequent, this was not considered a problem. Another drawback of the TenTen corpora is the fact that they provide rather little meta-data (Jakubíček et al. 2013), but, as the purpose of this study required an investigation of linguistic patterns, rather than of sociolinguistic aspects such as speaker age, gender, etc., this also did not disqualify them from being used here.
+3.3 Corpus Research on “über”
+For querying the corpus, the interface provided by Sketch Engine [INT 8] was used, which, among other options, made it possible to perform complex queries with the help of the Corpus Query Language (CQL, [INT 10]). As a first exploratory search in the enTenTen12 for über and its orthographical variants revealed that a number of the over 38,000 hits cannot be taken as examples of über as a prefix borrowed from German, these hits had to be cleaned up1 first. The remaining 26,573 hits were queried in order to reveal relevant aspects of the 'new identity' of über in the English language, on the basis of the various assumptions outlined under 2: 
+Orthography: To which extent has the orthography been adapted?
+Grammar: Which parts of speech can the prefix be attached to? Is it always used as a prefix, or can it stand on its own?
+Semantics & usage: What are the main semantic similarities of the words the prefix is attached to? Which meaning(s) of the prefix can be derived? What can be said about the contexts of usage?
+Comparison to the donor language: Which differences does the German prefix über show with regard to grammar, semantics and usage?
+The answers which the corpus queries revealed with regard to these questions are presented in the following sections.
+3.3.1 Orthography
+The speaker intuitions and dictionary entries showed that there are three different possibilities of spelling the prefix: über, the most common German spelling which occurs 3,669 times (ca. 14%), ueber, which can also be used in German and occurs 232 times (ca. 1%), and uber, which is not used in German, and can thus be considered the most 'anglicized' version, occurring 22,672 times (ca. 85%). These numbers indicate that, although the German spellings have not (yet) been entirely discarded, there is a strong tendency to use an adapted English spelling. Nothing can be revealed here about pronunciation, but it seems plausible to speculate that most English speakers, if they spell the prefix as uber-, will also not pronounce it with the original German vowel [y].
+3.3.2 Grammar
+As for the grammatical status of über2, spelling can also be expected to give some useful indications: It has been pointed out by Stanforth (1996: 108) that a foreign element that is prepended to a (native) word with a hyphen is probably developing into a loan prefix. Thus, three options of how expressions containing über may be spelled can be identified: It can be prepended without a hyphen (like most native prefixes would be), it can be connected to the following element with a hyphen, or it can be separated from the following element by a blank space. In 12,616 instances (ca. 47%) out of the corpus hits, über is followed by a hyphen, whereas there are 10,497 (ca. 40%) hits for über followed by a blank space, which leaves  3,460 cases (ca. 13%) where it is prepended without a hyphen. Consequently, über does not seem to be perceived as a fully integrated prefix, but the spellings that indicate a kind of prefix status together make up the majority of the hits, with the hyphenated form being preferred by most speakers.
+Apart from the spelling, a look at the classes of the words that follow after über is necessary to clarify its grammatical status: Is it, as it is indicated in one of the speaker intuition reports, mainly used in front of adjectives and nouns, or can it be followed by other word classes as well? Table 1 (see Appendix III) lists the numbers of hits for all major open word classes. Taking into consideration the different variants of how über can be connected to the following element, separate queries were carried out for über, followed by blank space and then an adjective / noun etc., and for adjectives / nouns etc. beginning with über or über-. A closer look at the results showed, however, that the part-of-speech-tagger seemed to have significant problems with the words where über is prepended (either with hyphen or without), and tagged most of these as nouns, even though a huge number of them are not nouns, but rather, in most cases, adjectives. Thus, only the numbers for über followed by a blank space can be considered more or less reliable. These show a strong tendency for über to be followed by either a noun or an adjective, with adjectives being by far the most common word class that follows. Also, a look at the hits for verbs showed that they contained a number of hits with tokens ending in -ed or -ing, which should be considered adjectives rather than verbs (e.g. I was über surprised, the uber annoying Jennifer). There are, however, a few hits that show true prefixed verbs, such as I can see that Australia will once again just uber dominate the sport. 
+What is interesting to note is that the query for adverbs starting with über revealed that there is a derived adverb uberly (e.g. she decided that she had to be uberly smart), which occurs 48 times in the entire corpus. Even though the frequency of this derivation is very low (much less than one occurrence per million words), its occurrence shows first that über has been integrated into English to an extent where it is possible to attach native English suffixes to it. Second, it reveals that über seems to be treated as an adjective rather than a prefix at least by some speakers. This fact is supported by the discovery of hits such as this mask is uber because it cleanses the skin or Indeed this elusive facility is stomping ground to only the most uber of players.
+In conclusion, the investigation of the grammatical aspects of über showed that it cannot be as clearly classified as a prefix or combining form as the dictionary entries suggest. Rather, its status and the question of how closely it is connected to the following item seems to vary in the perception of the speakers. 
+3.3.3 Semantics & Usage
+As a first approach to the question of how and with which meanings über is used in English, the words which follow most often after the prefix were inspected with regard to their evaluative connotations. As this required an analysis of which words the prefix is prepended to with or without a hyphen, that is, a morphemic analysis which is not possible in Sketch Engine, a Python algorithm was developed that is able to detect the spelling variants of über in the corpus results, and computes a count of the words that appear after them (no matter whether separated by hyphen, blank space or nothing). Table 2 (see Appendix III) lists the 100 words that appear most often after über, classified as either having a positive connotation, a negative connotation, or no evaluative connotation / both  connotations. Even though this rating of connotations might be subjective and arguable for some items, a tendency to use über with positively connotated words emerges quite clearly, followed by words with no or both connotations, and a very small number of words with mostly negative connotations.
+This might indicate that über is mostly used to intensify a positive expression, however, one of the speakers whose intuitions were taken as the starting point of this investigation, stated that the prefix can also be used to sarcastically convert the meaning of a word into the opposite (Limbach 2007: 67). As no possibility was found to quantitatively assess the sarcasm in the contexts in which über is used, a qualitative survey of 100 randomly selected sentences from the corpus was carried out instead. This revealed that über was used in the following contexts:
+1. for an intensification of an expression of positive or (sometimes) negative feelings / evaluations, in the sense of 'very' / 'super':  I'm uber stressed now […] / Rafael looks uber gorgeous too and is in great shape. / […] because my family was uber nice to me this Christmas and bought me a keyboard.
+2. for an outstanding example of a particular kind of person or thing: Perennial powerhouse Duke is white hot this year under the guidance of uber-coach Mike Kzryzewksi. / He was sort of the uber-civilian. / So the 12 week uber-vacation is over and I'm back at work […].
+3. used sarcastically, possibly in: Or you could take your uber friendly pit bull dog and meet new people […].
+The main uses, however, seem to be the first two, as only the one sentence quoted above could be identified as a possible sarcastic use in the random sample. Thus, this analysis confirmed the speaker intuitions and dictionary information to a considerably extent (note, however, that the second meaning is not found in the speaker intuitions, and the third not in the dictionary entries). No examples could be found to confirm the statement by one speaker that über is used to express some kind of contemporary touch, which indicates that the example this speaker gives ("Rumors about uberauthor JK Rowling's final book of the Harry Potter series are causing a stir", Limbach 2007: 68) might also be understood as rather expressing the second meaning listed above. Additionally, there is of course the use of über as an adjective, which was demonstrated in the previous sub-section, and illustrates a further meaning of über that seems to express something like 'great' or 'cool'.
+As has been noted in section 2.2, one important indicator of the integration of a loan is its use outside of contexts that refer to the culture of the donor language. In Stanforth (1993) it becomes evident that one cultural context that very often triggers the use of German words in English is a reference to Nazi Germany. Thus, apart from looking for words such as German or Germany in the contexts of über, words starting with Nazi and Hitler were also included in a proximity query3 that should indicate how often über is used in such German contexts. Only 150 hits (ca. 0.6% of all hits) contained these indicator words within a distance of at most 10 words right or left of über. This shows that the use of über is not restricted to culturally marked contexts, indicating that it has an established position in the English lexicon.
+3.3.4 Comparison to the Donor Language
+To assess the extent to which the findings reported so far attest to a 'new identity' of the loan morpheme, it is of course necessary to compare them to the corresponding aspects of the German source morpheme. In order to have comparable data, a random sample of 26,573 occurrences of über, followed by more than one character (to exclude contractions of the preposition über with an article, such as übers, überm, etc.) was created from the deTenTen10 corpus. über separated from the next word by a blank space did not have to be considered here, as this can quite certainly be expected to be an instance of the preposition, rather than the prefix. A summary of which word classes the words starting with über belong to can be found in Table 3 (see Appendix III). The numbers show that, other than the loan morpheme, the German morpheme über occurs almost equally often in verbs, nouns and adjectives, with verbs being the word class with the highest number of hits. A closer look at the results, however, reveals that most of the hits (no matter which word class) consist in more or less fixed combinations in which über does not modify the meaning of the word it is prepended to. These combinations rather can be considered to have one fixed meaning as a unit (e.g. übersetzen, überhaupt, überlistet, Überzeugung, etc.). Only very few hits seem to be truly compositional in meaning, such as übereifrig or überbehütend. Accordingly, a look at the 100 most common words (or here rather word parts, see Appendix III) that occur most often after über (created with the Python algorithm described above) shows that all of them have to be considered rather neutral with regard to their evaluative connotations. 
+As the German results thus did not lend themselves to a semantic analysis similar to the one carried out with the English results, and no way was found to solve that problem with the help of corpus-linguistic methods, the semantic comparison will have to be based on dictionary information instead. The information given in the Duden Online [INT 11] for the prefix über can be found in Appendix IV.  A look at the different meanings that are listed there shows that the first two meanings that were detected for the loan morpheme occur in the Duden, along with a number of other meanings. However, the sarcastic use that converts the meaning of a word into the opposite cannot be found, which does not necessarily mean that it does not exist, as was shown with regard to the English version, whose sarcastic meaning also did not occur in the dictionaries. Rather, it is possible that the dictionaries in general do not list sarcastic usages as they are very content-dependent, or that a sarcastic use of über was simply not considered important enough to list it. A closer look at 100 randomly chosen sample sentences could not reveal any sarcastic contexts either, but, as was mentioned before, this might also be due to the very low frequency of words with a truly compositional meaning in the corpus, and accordingly in the sample.
+In summary, the comparison to the donor language shows that über in German seems to be more frequently prepended to word classes other than nouns and adjectives, and that it has a wider variety of different meanings. A search for über standing on its own as an adjective did not return any results, so this use, which we have seen in the English corpus, is obviously impossible in German.
+4    Conclusions
+The analysis above shows that the loan morpheme über can indeed be said to have taken on a 'new identity' in English to a considerable extent: Its range of meaning and use covers only a sub-part of the ways in which the prefix is used in German, and it has been orthographically and grammatically adapted to the recipient language. Furthermore, there are even derivatives in other word classes (über as an adjective, uberly as an adverb) that cannot be found in German, and its status as either a prefix or a word seems to be unfixed. These last two aspects were neither mentioned in the speaker intuitions that formed the starting point of this investigation, nor in the entries for über in English dictionaries, which demonstrates the importance of studying the use of words in large corpora. 
+Of course, some further aspects that would have been interesting to consider with regard to the loan morpheme über could not be covered within the limited scope of this study. Diachronic aspects, such as its relationship to the loan word Übermensch that was mentioned in one of the dictionaries, would be worth some further research, as well as the use of the German prefix, which was here mainly inferred from dictionary information. Investigating sociolinguistic aspects of the use of über could also yield valuable results. Furthermore, it would be interesting to see whether similar findings as the ones reported above could be made for hybrid creations with other corpus data (e.g. from spoken or newspaper corpora), with other loan morphemes, and with other languages involved. 
+In spite of these limitations, the results presented here provide an interesting perspective on borrowing that is in line with other research on loan words, as presented in chapter 2. It illustrates the great extent to which the English language is capable of absorbing material from other languages, as well as adjusting it to fit into its linguistic system, and to meet the communicative needs of its speakers.  
+
+References
+Haspelmath, Martin. 2009. "Lexical borrowing: Concepts and issues." In Haspelmath, Martin and Tadmor, Uri. (eds.): Loanwords in the World's Languages: A Comparative Handbook. Berlin: Walter de Gruyter. pp. 35–54.
+
+Haugen, Einar. 1950. "The Analysis of Linguistic Borrowing." In: Language. 26(2). April - June 1950. pp. 210–31. Available Online. URL: http://www.jstor.org/ stable/410058. Last access: 5 September 2014.
+
+Jakubíček, Miloš / Kilgarriff, Adam / Kovář, Vojtěch / Rychlý, Pavel / Suchomel,  Vít. 2013. “The TenTen Corpus Family.” In: Proceedings of the 7th International Corpus Linguistics Conference. 23 – 26 July 2013. Lancaster, UK. Available Online. URL: http://www.sketchengine.co.uk/documentation/wiki/Corpora/ TenTen. Last access: 10 September 2014.
+
+Limbach, Jutta. 2007. Ausgewanderte Wörter: Eine Auswahl der interessantesten Beiträge zur internationalen Ausschreibung 'Ausgewanderte Wörter'. Ismaning: Hueber.
+
+Meier, A. J. 2000. "The Status of 'Foreign Words' in English: The Case of Eight German Words." In: American Speech. 75(2). Summer 2000. pp. 169–83. Available Online. URL: http://muse.jhu.edu/login?auth=0&type=summary&url=/journals/ american_speech/v075/75.2meier.pdf. Last access: 5 September 2014.
+
+Onysko, Alexander / Winter-Froemel, Esme. 2011. "Necessary loans – luxury loans? Exploring the pragmatic dimension of borrowing." In: Journal of Pragmatics. 43(6) 2011. pp. 1550–67. Available Online. URL: http://www.sciencedirect.com/ science/article/pii/S0378216610004091. Last access: 5 September 2014.
+
+Pfeffer, J. Alan / Cannon, Garland H. 1994. German Loanwords in English: An Historical Dictionary. Cambridge, New York: Cambridge University Press.
+
+Stanforth, Anthony W. 1993. "Functional and Stylistic Aspects of German Loans in English." In Flood, John L. / Salmon, Paul / Sayce, Oliver / Wells, Christopher. (eds.): Das unsichtbare Band der Sprache: Studies in German Language and Linguistic History in Memory of Leslie Seiffert. Stuttgart: Hans-Dieter Heinz Akademischer Verlag. pp. 431–53.
+
+Stanforth, Anthony W. 1996. Deutsche Einflüsse auf den englischen Wortschatz in Geschichte und Gegenwart: mit einem Beitrag zum Amerikanischen Englisch von Jürgen Eichhoff. Tübingen: Niemeyer.
+
+Stubbs, Michael. 2001. Words and Phrases: Corpus Studies of Lexical Semantics. Oxford: Blackwell.
+
+
+
+Internet Sources
+[INT 1] http://www.oxfordreference.com/view/10.1093/acref/9780199675128.001.0001/              
+             acref-9780199675128, 9 September 2014.
+
+[INT 2] http://bncweb.lancs.ac.uk, 10 September 2014.
+
+[INT 3] http://www.natcorp.ox.ac.uk/corpus/index.xml, 10 September 2014.
+
+[INT 4] http://www.collinsdictionary.com/, 8 September 2014.
+
+[INT 5] http://www.ldoceonline.com/, 8 September 2014.
+
+[INT 6] http://www.merriam-webster.com/, 8 September 2014.
+
+[INT 7] http://www.oxfordreference.com/view/10.1093/acref/9780199571123.001.0001/
+             acref-9780199571123, 8 September 2014.
+
+[INT 8] http://www.sketchengine.co.uk/, 10 September 2014.
+
+[INT 9] http://www.sketchengine.co.uk/documentation/wiki/Corpora/deTenTen, 
+             10 September 2014.
+
+[INT 10] http://www.sketchengine.co.uk/documentation/wiki/SkE/CorpusQuerying, 
+               15 September 2014.
+
+[INT 11] http://www.duden.de/woerterbuch, 17. September 2014.
+
+
+Appendix I: Speaker Intuitions
+Speaker statements about über in the English language, as collected in Limbach (2007):
+uber (über)
+Englisch für: toll, spitze
+In der englischen Jugendsprache hat sich das "uber" [juber] als Steigerungsform von "super" oder "mega" herausgebildet. Alle sozialen Klassen der heutigen Jugend Großbritanniens benutzen dieses Wort und sind immer wieder erstaunt, wenn man sie aufklärt, dass es ein "uber" nicht gibt in der deutschen Sprache - Umlaute kennen sie nicht und denken beim Nutzen des "uber" immer, sie würden deutsch sprechen. Wie es nach Great Britain kam? Das weiß niemand der Befragten.
+Christian Fuchs, Berlin, Deutschland (Limbach 2007: 67)
+____________________________________________________________________
+über...
+Britisches Englisch für: über
+Beim Zeitunglesen in Grossbritannien finden sich immer wieder deutsche Woerter. Fuer mich am haeufigsten aufgetreten ist "über". "Über" wird in Großbritannien vielfaeltig verwendet. Meist allerdings ohne "ü". Hin und wieder findet das Wort "Uberflieger" (gleiche Bedeutung, keine Übersetzung möglich) seinen Weg in die Presse. Vor allem aber wird "über" in Zusammensetzung mit englischen Wörtern verwendet: "uber-rich", "uber-big", "uber-strong" und "uber-powerful". Dadurch wird die englische Bedeutung des jeweiligen Wortes vervielfaeltigt, oder aber sarkastisch ins Gegenteil gewandelt. Je nach Zusammenhang.
+Angelika Mohr, London, Großbritannien (Limbach 2007: 67)
+____________________________________________________________________
+ueber
+Amerkanisches Englisch für: super
+The customary words to intensify expressions - really, super, pretty, hella, totally, and awesomely - have been amplifying American teenage speech for some time. Recently, "über" has entered into this grouping of words, which aid in proclaiming verbal exclamation and excitement. Relieved of its umlaut in American English, "uber" is typically partnered with an adjective or noun to express an additional level of positive or negative sentiment. The particularly guttural sound of its first syllable makes "uber" a trendy amplifier for regularly used adjectives, providing more flair to a conversation; for example, "That movie was uber scary." Additionally, using "uber" can, at times, also provide a contemporary touch to a topic, emphasizing a matter or thing as being current, or in style - for example, as in, "Rumors about uberauthor JK Rowling's final book of the Harry Potter series are causing a stir." The incorporation of "uber" into the modern American lexicon most likely originates from references to the Übermensch in American pop culture, which has misconstrued Übermensch to be a Nazi vision of the supreme, purely Aryan being. This American understanding of the word is not concordant with Nietzschean philosophy, Übermensch's true origin.
+Robert Keeley, Worcester, Massachusetts, USA (Limbach 2007: 68)
+Appendix II: English Dictionary Information
+Entries for über (or orthographical variants) in the online versions of major monolingual English dictionaries:
+uber- or über- (ˈuːbə)
+Definitions:
+combining form
+indicating the highest, greatest, or most extreme example of something   ⇒ America's ubernerd, Bill Gates, the uber-hip young Bohemians
+Word Origin: C20: from German über over, above 
+(Collins English Dictionary [INT 4])
+____________________________________________________________________
+uber-	prefix 		 	 	
+uber-	informal
+better, larger, or greater [= super]:
+uberbabe Pamela Lee / I want to do something uber-cool with my webpage. 
+(Longman Dictionary of Contemporary English [INT 5])
+____________________________________________________________________
+über- prefix \ˈü-bər, ˈue-bər\
+—used to indicate that someone is a great or extreme example of a particular kind of person 
+: better, larger, or greater than
+Full Definition of ÜBER-:
+1:  being a superlative example of its kind or class :  super- <übernerd>
+2:  to an extreme or excessive degree :  super- <übercool>
+Variants of ÜBER-: über- also uber-
+Origin of ÜBER-: German, from über over, beyond, from Old High German ubar
+(Merriam-Webster Dictionary [INT 6])
+____________________________________________________________________
+uber- /ˈuːbə/ ((also über- /ˈyːbə/) )
+combining form
+denoting an outstanding or supreme example of a particular kind of person or thing: she's a self-proclaimed uberbitch | an audience composed largely of ubergeeks.
+to a great or extreme degree: an uber-cool bar. 
+– origin German über 'over', after  Übermensch.
+(Oxford Dictionary of English [INT 7])
+Appendix III: Research Results
+Table 1: Different Word Classes after “über” in English
+
+noun
+adjective 
+verb
+adverb
+other
+über + blank space + …
+(10,497 total)
+3786
+(ca. 36.1%)
+5355
+(ca. 51%)
+533
+(ca. 5.1 %)
+67
+(ca. 0.6 %)
+756
+(ca. 7.2 %)
+… beginning with über-
+(12,616 total)
+12299
+(ca. 97.5%)
+184
+(ca. 1.5%)
+2
+(ca. 0%)
+120
+(ca. 1%)
+11
+(ca. 0%)
+… beginning with über 
+(3,460 total)
+3386
+(ca. 97.9%)
+9
+(ca. 0.3%)
+0
+(0%)
+64
+(ca. 1.9%)
+1
+(ca. 0%)
+
+Table 2: 100 Words Used Most Commonly after “über” in English
+The table shows the 100 content words that occur most often after über. Items that could be identified as proper names were excluded, plural and singular forms of the same noun were merged. The number after each word is the number of hits in the cleaned corpus. Connotations were, when unclear, checked in the Oxford Dictionary of English [INT 7]. 
+mostly positive evaluative connotation
+mostly negative evaluative connotation 
+no evaluative connotation / 
+both possible
+cool (1465) 
+talented (474) 
+rich (438) 
+popular (413) 
+chic (365) 
+successful (210) 
+wealthy (200) 
+cute (199) 
+trendy (198) 
+stylish (196) 
+hip (187) 
+sexy (185) 
+hot (134) 
+powerful (125) 
+fast (113) 
+modern (111) 
+famous (104) 
+smart (84) 
+luxury (82) 
+awesome (81) 
+cheap (78) 
+important (73)
+creative (67) 
+healthy (62) 
+fabulous (62) 
+high (62) 
+fashionable (62)
+glam (59) 
+sophisticated (58) 
+luxurious (58) 
+confident (57) 
+athletic (56) 
+comfortable (54) 
+sweet (54) 
+easy (51) 
+fun (47) 
+star (47)
+efficient (46) 
+soft (45) 
+friendly (43) 
+fab (43)
+luxe (42)
+babe (39) 
+fresh (39)
+romantic (37) 
+nice (36) 
+delicious (35) 
+amazing (34)
+posh (34) 
+happy (34) 
+comfy (32) 
+flattering (32) 
+gorgeous (32) 
+intelligent (31) 
+fancy (31) 
+professional (31)
+hero (30) 
+expensive (178) 
+nerd (163)
+busy (99) 
+creepy (55) 
+serious (45) 
+violent (40) 
+villain (34)
+annoying (30) 
+geek/geeks (541) 
+liberal (167) 
+conservative (152) 
+fan/fans (144) 
+competitive (122) 
+excited (116)
+man (105)
+producer (97)
+feminine (72) 
+connected (60) 
+blogger (60)
+simple (58) 
+geeky (52) 
+prospect (48) 
+rare (48) 
+exclusive (48) 
+religious (48)
+long (46) 
+green (44) 
+organized (43) 
+sensitive (43) 
+thin (42) 
+christian (40)
+agent (38) 
+charge (38)
+frau (37) 
+cheesy (36)
+masculine (36)
+class (35) 
+short (34) 
+hacker (34) 
+hawk (34) 
+local (34) 
+chef (30) 
+boss (30) 
+57 words
+8 words
+35 words
+Table 3: Different Word Classes after “über” in German 
+
+noun
+adjective 
+verb
+adverb
+other
+über + …
+( 26,573 total)
+7970
+(ca. 30%)
+6565
+(ca. 24.7%)
+8544
+(ca. 32.2%)
+3102
+(ca. 11.7%)
+392
+(ca. 1.5%)
+
+List of 100 Items Used Most Commonly after “über” in German
+The number after each word is the number of hits in the random corpus sample of 26,573 hits.
+haupt (2113), all (823), nehmen (671), blick (661), tragen (638), zeugt (592), nommen (502), wiegend (438), nimmt (433), zeugen (432), legen (391), sicht (377), nahme (368), prüfen (367), prüfung (320), rascht (287), prüft (283), tragung (281), leben (274), wachung (262), lassen (251), legungen (250), setzung (249), gang (242), raschend (237), geben (229), zeugung (220), nahm (215), setzt (204), winden (202), legt (198), aus (189), raschung (186), schritten (169), schrift (155), flüssig (152), sehen (151), sichtlich (144), gewicht (144), nachtung (139), zeugend (133), schreiten (129), nachtungen (125), wacht (124), gabe (123), einstimmung (118), arbeitet (113), fordert (110), dies (108), lebt (107), wachen (104), mittelt (102), raschungen (101), setzen (98), trieben (96), raschen (94), wunden (93), mittlung (93), setzungen (89), ein (89), windung (87), mitteln (81), durchschnittlich (81), weisung (81), holt (80), legung (78), zogen (77), steigt (76), trägt (75), lege (70), nachten (70), steigen (67), setzer (66), führt (65), arbeitung (65), lebenden (64), reicht (62), raschende (62), wiesen (62), zeugte (61), stehen (61), schreitung (61), stunden (60), standen (59), troffen (59), zeugende (58), tragenen (57), denken (56), weisen (55), treffen (55), fall (55), arbeitete (54), nahmen (54), wiegende (52), legenheit (51), griffe (51), gehen (50), zeugungen (50), queren (49), fallen (49)
+Appendix IV: German Dictionary Information
+Entry für über- and Über- in the online version of the Duden [INT 11]:
+über-
+1. drückt in Bildungen mit Adjektiven eine Verstärkung aus; sehr, überaus
+Gebrauch: verstärkend
+Beispiel: überdeutlich, überglücklich
+
+2. drückt in Bildungen mit Adjektiven aus, dass eine Eigenschaft über etwas hinausgeht
+Beispiel: überindividuell, übernational
+
+3. drückt in Bildungen mit Adjektiven oder Verben aus, dass das übliche Maß überschritten wird, dass etwas zu sehr ausgeprägt ist, dass jemand etwas zu viel, zu sehr tut
+Beispiele: überbuchen, -würzen, überehrgeizig, -elegant
+
+4. drückt in Bildungen mit Verben aus, dass jemand einer Sache überdrüssig ist, sie nicht mehr mag
+Beispiel: überessen, überhaben
+
+5. drückt in Bildungen mit Verben ein Bedecken, ein Sicherstrecken aus
+Beispiel: überfluten, überpudern
+
+6. drückt in Bildungen mit Substantiven und einer Endung aus, dass eine Sache oben oder an der Oberseite mit etwas versehen wird
+Beispiel: überdachen, -golden
+
+7. drückt in Bildungen mit Verben ein Wechseln (von einer Stelle o. Ä. auf eine andere) aus
+Beispiel: übersiedeln, -springen“
+____________________________________________________________________
+
+Über-
+1. kennzeichnet in Bildungen mit Substantiven ein Zuviel an, von etwas
+Beispiel: Überkontrolle, Übersubventionierung
+
+2. kennzeichnet in Bildungen mit Substantiven etwas Übergeordnetes
+Beispiel: Überministerium
+
+3. kennzeichnet in Bildungen mit Substantiven jemanden oder etwas als über allem stehende, alles beherrschende [ideale] Figur oder Sache
+Beispiel: Überdoktor, Überfilm, Übergitarrist, Übermutter
+
+
+Confirmation of Authorship
+I hereby formally declare that the work submitted is entirely my own and does not involve any additional human assistance. I also confirm that it has not been submitted for credit before, neither as a whole nor in part and neither by myself nor by any other person. All quotations and paraphrases but also information and ideas that have been taken from sources used are cited appropriately with the corresponding bibliographical references provided. The same is true of all drawings, sketches, pictures and the like that appear in the text, as well as of all Internet resources used.
+	Violation of these terms will result in failure of the seminar (PS, SE, etc.) and no credits will be awarded. I am aware that plagiarism is serious academic misconduct which can lead to further sanctions on reoccurrence.
+
+Marburg, 19 September 2014
+
+
+
+
+			

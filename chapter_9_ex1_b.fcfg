@@ -1,0 +1,20 @@
+% start S
+S -> NP[AGR=?n] VP[AGR=?n]
+NP[AGR=?n] -> Pro[AGR=?n]
+VP[TENSE=?t, AGR=?n] -> Cop[TENSE=?t, AGR=?n] Adj
+
+Cop[TENSE=pres, AGR=[NUM=sg, PER=1]] -> 'am'
+Cop[TENSE=pres, AGR=[NUM=sg, PER=2]] -> 'are'
+Cop[TENSE=pres, AGR=[NUM=sg, PER=3]] -> 'is'
+Cop[TENSE=pres, AGR=[NUM=pl, PER=1]] -> 'are'
+Cop[TENSE=pres, AGR=[NUM=pl, PER=2]] -> 'are'
+Cop[TENSE=pres, AGR=[NUM=pl, PER=3]] -> 'are'
+
+Pro[AGR=[NUM=sg, PER=1]] -> 'I'
+Pro[AGR=[NUM=sg, PER=2]] -> 'you'
+Pro[AGR=[NUM=sg, PER=3]] -> 'he' | 'she' | 'it'
+Pro[AGR=[NUM=pl, PER=1]] -> 'we'
+Pro[AGR=[NUM=pl, PER=2]] -> 'you'
+Pro[AGR=[NUM=pl, PER=3]] -> 'they'
+
+Adj -> 'happy'

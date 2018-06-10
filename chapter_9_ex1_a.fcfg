@@ -1,0 +1,28 @@
+% start S
+S -> NP_SG_1 VP_SG_1
+S -> NP_SG_PL_2 VP_SG_2_PL
+S -> NP_SG_3 VP_SG_3
+S -> NP_PL_1 VP_SG_2_PL
+S -> NP_PL_3 VP_SG_2_PL
+
+NP_SG_1 -> Pro_SG_1
+NP_SG_PL_2 -> Pro_SG_PL_2
+NP_SG_3 -> Pro_SG_3
+NP_PL_1 -> Pro_PL_1
+NP_PL_3 -> Pro_PL_3
+
+VP_SG_1 -> Cop_SG_1 Adj
+VP_SG_2_PL -> Cop_SG_2_PL Adj
+VP_SG_3 -> Cop_SG_3 Adj
+
+Pro_SG_1 -> 'I'
+Pro_SG_PL_2 -> 'you'
+Pro_SG_3 -> 'he' | 'she' | 'it'
+Pro_PL_1 -> 'we'
+Pro_PL_3 -> 'they'
+
+Cop_SG_1 -> 'am'
+Cop_SG_2_PL -> 'are'
+Cop_SG_3 -> 'is'
+
+Adj -> 'happy'

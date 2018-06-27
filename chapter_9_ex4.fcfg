@@ -1,0 +1,13 @@
+VP[TENSE=?t, NUM=?n] -> V[SUBCAT=intrans, TENSE=?t, NUM=?n, BAR=1]
+VP[TENSE=?t, NUM=?n] -> V[SUBCAT=trans, TENSE=?t, NUM=?n, BAR=1] NP
+VP[TENSE=?t, NUM=?n] -> V[SUBCAT=clause, TENSE=?t, NUM=?n, BAR=1] SBar
+
+V[SUBCAT=intrans, TENSE=pres, NUM=sg, BAR=0] -> 'disappears' | 'walks'
+V[SUBCAT=trans, TENSE=pres, NUM=sg, BAR=0] -> 'sees' | 'likes'
+V[SUBCAT=clause, TENSE=pres, NUM=sg, BAR=0] -> 'says' | 'claims'
+V[SUBCAT=intrans, TENSE=pres, NUM=pl, BAR=0] -> 'disappear' | 'walk'
+V[SUBCAT=trans, TENSE=pres, NUM=pl, BAR=0] -> 'see' | 'like'
+V[SUBCAT=clause, TENSE=pres, NUM=pl, BAR=0] -> 'say' | 'claim'
+V[SUBCAT=intrans, TENSE=past, BAR=0] -> 'disappeared' | 'walked'
+V[SUBCAT=trans, TENSE=past, BAR=0] -> 'saw' | 'liked'
+V[SUBCAT=clause, TENSE=past, BAR=0] -> 'said' | 'claimed'

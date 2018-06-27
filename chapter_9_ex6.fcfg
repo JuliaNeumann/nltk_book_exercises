@@ -1,0 +1,27 @@
+% start NP
+# Grammar Productions
+
+NP -> INDEF[AGR=?a] NP[AGR=?a]
+NP[AGR=?a] -> N[AGR=?a] ADJ[AGR=?a]
+# Lexical Productions
+# Indefinite determiners
+# masc
+INDEF[AGR=[GND=masc,NUM=sg]] -> 'un'
+INDEF[AGR=[GND=masc,NUM=pl]] -> 'unos'
+# fem
+INDEF[AGR=[GND=fem,NUM=sg]] -> 'una'
+INDEF[AGR=[GND=fem,NUM=pl]] -> 'unas'
+# Nouns
+# masc
+N[AGR=[GND=masc,NUM=sg]] -> 'cuadro'
+N[AGR=[GND=masc,NUM=pl]] -> 'cuadros'
+# fem
+N[AGR=[GND=fem,NUM=sg]] -> 'cortina'
+N[AGR=[GND=fem,NUM=pl]] -> 'cortinas'
+# Adjectives
+# masc
+ADJ[AGR=[GND=masc,NUM=sg]] -> 'hermoso'
+ADJ[AGR=[GND=masc,NUM=pl]] -> 'hermosos'
+# fem
+ADJ[AGR=[GND=fem,NUM=sg]] -> 'hermosa'
+ADJ[AGR=[GND=fem,NUM=pl]] -> 'hermosas'

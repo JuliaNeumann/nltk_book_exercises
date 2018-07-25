@@ -1,0 +1,18 @@
+% start S
+S[SEM=(?v + '(' + ?nps + ',' + ?npo + ')')] -> CONJ[SEM=?conj] NP[SEM=?nps] V[SEM=?v] NP[SEM=?npo]
+S[SEM=(?v + '(' + ?nps + ',' + ?s + ')')] -> CONJ[SEM=?conj] NP[SEM=?nps] V[SEM=?v] S[SEM=?s]
+S[SEM=(?v + '(boy)')] -> P[SEM=?p] V[SEM=?v] LOC[SEM=?loc]
+NP[SEM=?n] -> N[SEM=?n]
+NP[SEM=?n] -> DET[SEM=?det] N[SEM=?n]
+LOC[SEM=''] -> P[SEM=?p] P[SEM=?p] NP[SEM=?np]
+
+CONJ[SEM=''] -> 'So' | 'And'
+P[SEM=?p] -> 'to' | 'up' | 'into'
+N[SEM='boy'] -> 'he'
+N[SEM='cock-a-doo-dle-doo'] -> 'cock-a-doo-dle-doo'
+N[SEM='sky'] -> 'sky'
+V[SEM='be'] -> 'was'
+DET[SEM=''] -> 'a' | 'the'
+V[SEM='want'] -> 'wanted'
+V[SEM='fly'] -> 'fly'
+

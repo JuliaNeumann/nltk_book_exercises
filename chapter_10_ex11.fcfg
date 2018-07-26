@@ -1,18 +1,36 @@
 % start S
-S[SEM=(?v + '(' + ?nps + ',' + ?npo + ')')] -> CONJ[SEM=?conj] NP[SEM=?nps] V[SEM=?v] NP[SEM=?npo]
-S[SEM=(?v + '(' + ?nps + ',' + ?s + ')')] -> CONJ[SEM=?conj] NP[SEM=?nps] V[SEM=?v] S[SEM=?s]
-S[SEM=(?v + '(boy)')] -> P[SEM=?p] V[SEM=?v] LOC[SEM=?loc]
+S[SEM=(?vp + '(' + ?nps + ',' + ?npo + ')')] -> CONJ[SEM=?conj] NP[SEM=?nps] VP[SEM=?vp] NP[SEM=?npo]
+S[SEM=(?vp + '(' + ?nps + ')')] -> CONJ[SEM=?conj] NP[SEM=?nps] VP[SEM=?vp] AdvP[SEM=?advp]
+S[SEM=(?vp + '(' + ?nps + ',' + ?npo + ')')] -> NP[SEM=?nps] VP[SEM=?vp] NP[SEM=?npo]
+S[SEM=(?vp + '(' + ?nps + ',' + ?s + ')')] -> CONJ[SEM=?conj] NP[SEM=?nps] VP[SEM=?vp] S[SEM=?s]
+S[SEM=(?vp + '(' + ?nps + ',' + ?s + ')')] -> NP[SEM=?nps] VP[SEM=?vp] S[SEM=?s]
+S[SEM=(?vp + '(boy)')] -> P[SEM=?p] VP[SEM=?vp] AdvP[SEM=?advp]
+S[SEM=(?vp + '(boy,' + ?np +')')] -> P[SEM=?p] VP[SEM=?vp] NP[SEM=?np]
+S[SEM=(?s1 + ?conj + ?s2)] -> S[SEM=?s1] CONJ[SEM=?conj] S[SEM=?s2]
+S[SEM=(?vp + '(' + ?np + ')')] -> AdvP[SEM=?advp] AdvP[SEM=?advp] VP[SEM=?vp] NP[SEM=?np]
+
+VP[SEM=?v] -> V[SEM=?v]
+VP[SEM=?v] -> Aux[SEM=?aux] V[SEM=?v]
 NP[SEM=?n] -> N[SEM=?n]
 NP[SEM=?n] -> DET[SEM=?det] N[SEM=?n]
-LOC[SEM=''] -> P[SEM=?p] P[SEM=?p] NP[SEM=?np]
+NP[SEM=?n] -> DET[SEM=?det] Adj[SEM=?adj] N[SEM=?n]
 
-CONJ[SEM=''] -> 'So' | 'And'
-P[SEM=?p] -> 'to' | 'up' | 'into'
-N[SEM='boy'] -> 'he'
+AdvP[SEM=''] -> P[SEM=?p] P[SEM=?p] NP[SEM=?np]
+AdvP[SEM=''] -> Adv[SEM=?adv]
+
+
+CONJ[SEM='&'] -> 'And' | 'and'
+CONJ[SEM='->'] -> 'So'
+P[SEM=?p] -> 'to' | 'up' | 'into' | 'Once' | 'upon'
+Adv[SEM=''] -> 'there'
+Adj[SEM=''] -> 'little'
+DET[SEM=''] -> 'a' | 'the'
+N[SEM='boy'] -> 'he' | 'boy'
 N[SEM='cock-a-doo-dle-doo'] -> 'cock-a-doo-dle-doo'
 N[SEM='sky'] -> 'sky'
-V[SEM='be'] -> 'was'
-DET[SEM=''] -> 'a' | 'the'
+N[SEM='time'] -> 'time'
+V[SEM='be'] -> 'was' | 'be'
 V[SEM='want'] -> 'wanted'
 V[SEM='fly'] -> 'fly'
+Aux[SEM=''] -> 'did'
 
